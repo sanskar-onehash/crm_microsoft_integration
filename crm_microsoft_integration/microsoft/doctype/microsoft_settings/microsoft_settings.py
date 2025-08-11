@@ -43,7 +43,7 @@ def get_consent_uri():
 def verify_consent_permit(tenant, consent_id, admin_consent):
     mi_settings = get_mi_settings()
 
-    if not admin_consent:
+    if not admin_consent or admin_consent.lower() != "true":
         frappe.throw("Admin consent cancelled.")
 
     if consent_id != mi_settings.consent_hash:
@@ -51,10 +51,12 @@ def verify_consent_permit(tenant, consent_id, admin_consent):
 
     if not mi_settings.tenant_id:
         mi_settings.set("tenant_id", tenant)
-        mi_settings.save()
 
     elif mi_settings.tenant_id != tenant:
         frappe.throw("Tenant ID didn't matched. Can't provide access.")
+
+    mi_settings.set("admin_consent", True)
+    mi_settings.save()
 
     return True
 

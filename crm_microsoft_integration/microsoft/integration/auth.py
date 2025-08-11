@@ -1,17 +1,17 @@
 import frappe
 
+from frappe.utils import get_url_to_list
 from crm_microsoft_integration.microsoft.integration import utils, config, service
 
 
 @frappe.whitelist(allow_guest=True)
 def permit(tenant, state, admin_consent):
-    frappe.log_error(
-        "permit", {"tenant": tenant, "state": state, "admin_consent": admin_consent}
-    )
     service.verify_consent_permit(tenant, state, admin_consent)
     get_access_token(generate=True)
 
     frappe.db.commit()
+    frappe.response["type"] = "redirect"
+    frappe.response["location"] = get_url_to_list("Microsoft Settings")
 
 
 def get_access_token(generate=False):
@@ -29,6 +29,7 @@ def get_access_token(generate=False):
     }
     headers = {"Content-Type": "application/x-www-form-urlencoded"}
     data = utils.make_post_request(
+        config.MI_BASE_URI,
         f"/{client_credentials['tenant_id']}{config.MI_ACESS_TOKEN_ENDPOINT}",
         auth=False,
         data=payload,

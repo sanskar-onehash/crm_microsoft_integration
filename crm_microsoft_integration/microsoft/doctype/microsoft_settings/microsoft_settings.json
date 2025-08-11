@@ -73,7 +73,7 @@
    "label": "Admin consent"
   },
   {
-   "depends_on": "eval: doc.enabled && !doc.admin_cosent",
+   "depends_on": "eval: doc.enabled && !doc.admin_consent",
    "fieldname": "provide_consent",
    "fieldtype": "Button",
    "label": "Provide Consent"
@@ -106,7 +106,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-08-11 12:20:04.057786",
+ "modified": "2025-08-11 15:08:13.902984",
  "modified_by": "Administrator",
  "module": "Microsoft",
  "name": "Microsoft Settings",
