@@ -1,0 +1,128 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-08-08 14:31:59.593746",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "enabled",
+  "client_id",
+  "tenant_id",
+  "admin_consent",
+  "consent_hash",
+  "token_type",
+  "access_token",
+  "access_token_expiry",
+  "column_break_ozrz",
+  "client_secret_id",
+  "client_secret_value",
+  "redirect_uri",
+  "provide_consent"
+ ],
+ "fields": [
+  {
+   "default": "0",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enabled"
+  },
+  {
+   "depends_on": "enabled",
+   "fieldname": "client_id",
+   "fieldtype": "Data",
+   "label": "Client Id",
+   "mandatory_depends_on": "enabled"
+  },
+  {
+   "depends_on": "enabled",
+   "fieldname": "tenant_id",
+   "fieldtype": "Data",
+   "label": "Tenant Id"
+  },
+  {
+   "fieldname": "column_break_ozrz",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "enabled",
+   "fieldname": "client_secret_id",
+   "fieldtype": "Data",
+   "label": "Client Secret Id",
+   "mandatory_depends_on": "enabled"
+  },
+  {
+   "depends_on": "enabled",
+   "fieldname": "client_secret_value",
+   "fieldtype": "Password",
+   "label": "Client Secret Value",
+   "mandatory_depends_on": "enabled"
+  },
+  {
+   "description": "Add above as `Redirect URI` in your Azure Registered App configuration",
+   "fieldname": "redirect_uri",
+   "fieldtype": "Read Only",
+   "is_virtual": 1,
+   "label": "Redirect Uri"
+  },
+  {
+   "default": "0",
+   "fieldname": "admin_consent",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Admin consent"
+  },
+  {
+   "depends_on": "eval: doc.enabled && !doc.admin_cosent",
+   "fieldname": "provide_consent",
+   "fieldtype": "Button",
+   "label": "Provide Consent"
+  },
+  {
+   "fieldname": "consent_hash",
+   "fieldtype": "Read Only",
+   "hidden": 1,
+   "label": "Consent Hash"
+  },
+  {
+   "fieldname": "token_type",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Token Type"
+  },
+  {
+   "fieldname": "access_token",
+   "fieldtype": "Password",
+   "hidden": 1,
+   "label": "Access Token"
+  },
+  {
+   "fieldname": "access_token_expiry",
+   "fieldtype": "Datetime",
+   "hidden": 1,
+   "label": "Access Token Expiry"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2025-08-11 11:25:22.080585",
+ "modified_by": "Administrator",
+ "module": "Microsoft",
+ "name": "Microsoft Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
