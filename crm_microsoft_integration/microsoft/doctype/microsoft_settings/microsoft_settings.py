@@ -52,8 +52,6 @@ def verify_consent_permit(tenant, consent_id, admin_consent):
     if not mi_settings.tenant_id:
         mi_settings.set("tenant_id", tenant)
         mi_settings.save()
-        if frappe.request.method == "GET":
-            frappe.db.commit()
 
     elif mi_settings.tenant_id != tenant:
         frappe.throw("Tenant ID didn't matched. Can't provide access.")
@@ -88,7 +86,6 @@ def set_access_token(token_type, access_token, expires_in):
         }
     )
     mi_settings.save()
-    frappe.db.commit()
 
 
 def get_client_credentials():
