@@ -64,7 +64,8 @@ def get_access_token():
 
     if (
         not mi_settings.access_token_expiry
-        or mi_settings.access_token_expiry <= f_utils.get_datetime()
+        or f_utils.get_datetime(mi_settings.access_token_expiry)
+        <= f_utils.get_datetime()
     ):
         return None
 
@@ -75,6 +76,7 @@ def set_access_token(token_type, access_token, expires_in):
     access_token_expiry = f_utils.add_to_date(
         f_utils.get_datetime(),
         seconds=expires_in - 300,  # 300s/5m as a safety buffer
+        as_datetime=True,
     )
 
     mi_settings = get_mi_settings()
