@@ -58,6 +58,7 @@
    "mandatory_depends_on": "enabled"
   },
   {
+   "depends_on": "enabled",
    "description": "Add above as `Redirect URI` in your Azure Registered App configuration",
    "fieldname": "redirect_uri",
    "fieldtype": "Read Only",
@@ -105,7 +106,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-08-11 11:25:22.080585",
+ "modified": "2025-08-11 12:20:04.057786",
  "modified_by": "Administrator",
  "module": "Microsoft",
  "name": "Microsoft Settings",
