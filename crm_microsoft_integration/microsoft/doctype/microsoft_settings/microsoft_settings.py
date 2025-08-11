@@ -70,7 +70,7 @@ def get_access_token():
     ):
         return None
 
-    return f"{mi_settings.token_type} {mi_settings.get_password("access_token")}"
+    return f"{mi_settings.token_type} {mi_settings.get_password('access_token')}"
 
 
 def set_access_token(token_type, access_token, expires_in):
