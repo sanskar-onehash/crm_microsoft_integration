@@ -26,7 +26,9 @@ def get_access_token(generate=False):
         "scope": config.MI_AUTH_SCOPE,
     }
     data = utils.make_post_request(
-        config.MI_ACESS_TOKEN_ENDPOINT, auth=False, params=params
+        f"/{client_credentials['tenant_id']}{config.MI_ACESS_TOKEN_ENDPOINT}",
+        auth=False,
+        params=params,
     )
     service.set_access_token(
         data["token_type"], data["access_token"], data["expires_in"]

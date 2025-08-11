@@ -94,6 +94,7 @@ def set_access_token(token_type, access_token, expires_in):
 def get_client_credentials():
     mi_settings = get_mi_settings()
     return {
+        "tenant_id": mi_settings.tenant_id,
         "client_id": mi_settings.client_id,
         "client_secret": mi_settings.get_password("client_secret_value"),
     }
