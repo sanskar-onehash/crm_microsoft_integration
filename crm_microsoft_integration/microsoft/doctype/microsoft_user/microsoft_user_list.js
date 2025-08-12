@@ -14,7 +14,7 @@ function addSyncMSUserBtn(listview) {
   listview.page.add_inner_button("Sync Microsoft Users", function () {
     frappe.call({
       method:
-        "crm_microsoft_integration.microsoft.doctype.microsoft_user.microsoft_user.sync_microsoft_users",
+        "crm_microsoft_integration.microsoft.doctype.microsoft_user.microsoft_user.sync_ms_users",
       callback: function (response) {
         if (response && response.message) {
           if (response.message.status === "success") {

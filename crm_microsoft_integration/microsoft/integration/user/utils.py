@@ -1,7 +1,7 @@
-def parse_user_response(users):
+def parse_user_res(users_res):
     parsed_users = []
 
-    for user in users:
+    for user in users_res["value"]:
         parsed_users.append(
             {
                 "display_name": user["displayName"],

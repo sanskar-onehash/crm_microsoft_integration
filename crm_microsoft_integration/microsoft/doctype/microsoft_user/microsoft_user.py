@@ -5,9 +5,9 @@ import frappe
 from frappe.model.document import Document
 from crm_microsoft_integration.microsoft.integration.user import user
 
-SYNC_MICROSOFT_TIMEOUT = 25 * 60
-SYNC_MICROSOFT_JOB_NAME = "sync_microsoft_users"
-PROGRESS_ID = "sync_microsoft_users_progress"
+SYNC_MS_USER_TIMEOUT = 25 * 60
+SYNC_MS_USER_JOB_NAME = "sync_microsoft_users"
+SYNC_MS_USER_PRGRESS_ID = "sync_microsoft_users_progress"
 
 
 class MicrosoftUser(Document):
@@ -19,13 +19,13 @@ def sync_ms_users():
     frappe.enqueue(
         _sync_ms_users(),
         queue="default",
-        timeout=SYNC_MICROSOFT_TIMEOUT,
-        job_name=SYNC_MICROSOFT_JOB_NAME,
+        timeout=SYNC_MS_USER_TIMEOUT,
+        job_name=SYNC_MS_USER_JOB_NAME,
     )
     return {
         "status": "success",
         "msg": "Microsoft Users syncing started in background.",
-        "track_on": PROGRESS_ID,
+        "track_on": SYNC_MS_USER_PRGRESS_ID,
     }
 
 
@@ -35,7 +35,7 @@ def _sync_ms_users():
 
     for idx, ms_user in enumerate(ms_users):
         frappe.publish_realtime(
-            PROGRESS_ID,
+            SYNC_MS_USER_PRGRESS_ID,
             {"progress": idx + 1, "total": total, "title": "Syncing Microsoft Users"},
         )
         existing_user = frappe.db.exists("Microsoft User", {"id": ms_user.get("id")})
