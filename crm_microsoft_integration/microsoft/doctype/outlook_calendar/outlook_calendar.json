@@ -10,6 +10,7 @@
   "section_break_gawh",
   "id",
   "calendar_name",
+  "group_class_id",
   "column_break_ixmc",
   "is_default_calendar",
   "color",
@@ -18,6 +19,7 @@
   "owner_name",
   "owner_email",
   "column_break_fvle",
+  "microsoft_user",
   "user",
   "sync_section",
   "pull_from_outlook_calendar",
@@ -111,6 +113,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "fetch_from": "microsoft_user.user",
    "fieldname": "user",
    "fieldtype": "Link",
    "label": "User",
@@ -132,6 +135,18 @@
    "fieldtype": "Link",
    "label": "Calendar Group",
    "options": "Outlook Calendar Group"
+  },
+  {
+   "fieldname": "group_class_id",
+   "fieldtype": "Data",
+   "label": "Group Class ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "microsoft_user",
+   "fieldtype": "Link",
+   "label": "Microsoft User",
+   "options": "Microsoft User"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -141,7 +156,7 @@
    "link_fieldname": "custom_outlook_calendar"
   }
  ],
- "modified": "2025-08-12 12:21:19.149744",
+ "modified": "2025-08-12 23:02:29.306046",
  "modified_by": "Administrator",
  "module": "Microsoft",
  "name": "Outlook Calendar",
