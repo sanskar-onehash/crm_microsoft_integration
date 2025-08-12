@@ -8,7 +8,6 @@
   "enabled",
   "client_id",
   "tenant_id",
-  "admin_consent",
   "consent_hash",
   "token_type",
   "access_token",
@@ -66,14 +65,7 @@
    "label": "Redirect Uri"
   },
   {
-   "default": "0",
-   "fieldname": "admin_consent",
-   "fieldtype": "Check",
-   "hidden": 1,
-   "label": "Admin consent"
-  },
-  {
-   "depends_on": "eval: doc.enabled && !doc.admin_consent",
+   "depends_on": "enabled",
    "fieldname": "provide_consent",
    "fieldtype": "Button",
    "label": "Provide Consent"
@@ -106,7 +98,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-08-11 15:08:13.902984",
+ "modified": "2025-08-12 21:52:29.573247",
  "modified_by": "Administrator",
  "module": "Microsoft",
  "name": "Microsoft Settings",
