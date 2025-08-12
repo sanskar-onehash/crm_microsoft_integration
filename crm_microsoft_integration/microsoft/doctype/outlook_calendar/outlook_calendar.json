@@ -13,6 +13,7 @@
   "column_break_ixmc",
   "is_default_calendar",
   "color",
+  "calendar_group",
   "owner_section",
   "owner_name",
   "owner_email",
@@ -125,11 +126,22 @@
    "fieldtype": "Data",
    "hidden": 1,
    "label": "Change Key"
+  },
+  {
+   "fieldname": "calendar_group",
+   "fieldtype": "Link",
+   "label": "Calendar Group",
+   "options": "Outlook Calendar Group"
   }
  ],
  "index_web_pages_for_search": 1,
- "links": [],
- "modified": "2025-08-12 11:55:23.614287",
+ "links": [
+  {
+   "link_doctype": "Event",
+   "link_fieldname": "custom_outlook_calendar"
+  }
+ ],
+ "modified": "2025-08-12 12:21:19.149744",
  "modified_by": "Administrator",
  "module": "Microsoft",
  "name": "Outlook Calendar",
