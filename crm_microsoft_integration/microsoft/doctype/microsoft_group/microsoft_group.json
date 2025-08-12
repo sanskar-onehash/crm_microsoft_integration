@@ -8,9 +8,7 @@
  "field_order": [
   "id",
   "display_name",
-  "mail",
-  "column_break_nspg",
-  "users"
+  "mail"
  ],
  "fields": [
   {
@@ -30,21 +28,16 @@
    "fieldname": "mail",
    "fieldtype": "Data",
    "label": "Mail"
-  },
-  {
-   "fieldname": "column_break_nspg",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "users",
-   "fieldtype": "Table MultiSelect",
-   "label": "Users",
-   "options": "Microsoft Users"
   }
  ],
  "index_web_pages_for_search": 1,
- "links": [],
- "modified": "2025-08-12 08:31:00.617726",
+ "links": [
+  {
+   "link_doctype": "Microsoft Groups",
+   "link_fieldname": "microsoft_group"
+  }
+ ],
+ "modified": "2025-08-12 12:42:27.892241",
  "modified_by": "Administrator",
  "module": "Microsoft",
  "name": "Microsoft Group",

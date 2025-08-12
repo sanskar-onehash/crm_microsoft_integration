@@ -11,7 +11,8 @@
   "user",
   "column_break_imur",
   "principal_name",
-  "mail"
+  "mail",
+  "groups"
  ],
  "fields": [
   {
@@ -49,11 +50,17 @@
    "in_list_view": 1,
    "label": "Name",
    "reqd": 1
+  },
+  {
+   "fieldname": "groups",
+   "fieldtype": "Table MultiSelect",
+   "label": "Groups",
+   "options": "Microsoft Groups"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-08-11 17:10:36.491083",
+ "modified": "2025-08-12 12:41:49.303402",
  "modified_by": "Administrator",
  "module": "Microsoft",
  "name": "Microsoft User",

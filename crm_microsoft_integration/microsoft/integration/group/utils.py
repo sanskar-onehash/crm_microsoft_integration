@@ -12,7 +12,7 @@ def parse_groups_res(groups_res):
     return parsed_groups
 
 
-def parse_group_members_res(members_res):
+def parse_group_members_res(members_res, group_id):
     parsed_members = []
 
     for member in members_res["value"]:
@@ -22,6 +22,7 @@ def parse_group_members_res(members_res):
                 "principal_name": member["userPrincipalName"],
                 "display_name": member["displayName"],
                 "mail": member["mail"],
+                "group": group_id,
             }
         )
     return parsed_members

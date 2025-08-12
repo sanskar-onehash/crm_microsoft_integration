@@ -8,8 +8,6 @@ def get_groups(with_users=False):
     if with_users:
         for group in groups:
             members_res = api.get_group_members(group["id"])
-            members = utils.parse_group_members_res(members_res)
-
-            group["users"] = [{"microsoft_user": member["id"]} for member in members]
+            group["users"] = utils.parse_group_members_res(members_res, group["id"])
 
     return groups
