@@ -17,7 +17,7 @@ class MicrosoftGroup(Document):
 @frappe.whitelist()
 def sync_ms_groups():
     frappe.enqueue(
-        _sync_ms_groups(),
+        _sync_ms_groups,
         queue="default",
         timeout=SYNC_MS_GROUP_TIMEOUT,
         job_name=SYNC_MS_GROUP_JOB_NAME,

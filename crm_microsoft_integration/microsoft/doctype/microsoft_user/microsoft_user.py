@@ -17,7 +17,7 @@ class MicrosoftUser(Document):
 @frappe.whitelist()
 def sync_ms_users():
     frappe.enqueue(
-        _sync_ms_users(),
+        _sync_ms_users,
         queue="default",
         timeout=SYNC_MS_USER_TIMEOUT,
         job_name=SYNC_MS_USER_JOB_NAME,
