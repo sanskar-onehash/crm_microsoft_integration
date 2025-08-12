@@ -19,3 +19,9 @@ MI_BASE_URI = "https://login.microsoftonline.com"
 ### Endpoints
 MI_ADMIN_CONSENT_ENDPOINT = "/adminconsent"
 MI_ACESS_TOKEN_ENDPOINT = f"/oauth2/{AUTH_API_VERSION}/token"
+
+## Graph Config
+GRAPH_API_VERSION = "v1.0"
+
+### URIs
+GRAPH_BASE_URI = f"https://graph.microsoft.com/{GRAPH_API_VERSION}"
