@@ -31,22 +31,29 @@ def sync_ms_groups():
 
 def _sync_ms_groups():
     ms_groups = group.get_groups(with_users=True)
-    total = len(ms_groups)
-    user_groups = {}
+    total_groups = len(ms_groups)
+
+    member_users = []
+    user_wise_groups = {}
 
     # Update Groups
     for idx, ms_group in enumerate(ms_groups):
         frappe.publish_realtime(
             SYNC_MS_GROUP_PROGRESS_ID,
-            {"progress": idx + 1, "total": total, "title": "Syncing Microsoft Groups"},
+            {
+                "progress": idx + 1,
+                "total": total_groups,
+                "title": "Syncing Microsoft Groups",
+            },
         )
 
         users = ms_group.pop("users")
         for user in users:
-            if user["id"] in user_groups:
-                user_groups[user["id"]].append(ms_group["id"])
+            if user["id"] in user_wise_groups:
+                user_wise_groups[user["id"]].append(ms_group["id"])
             else:
-                user_groups[user["id"]] = [ms_group["id"]]
+                user_wise_groups[user["id"]] = [ms_group["id"]]
+                member_users.append(user["id"])
 
         existing_group = frappe.db.exists("Microsoft Group", {"id": ms_group["id"]})
         if existing_group:
@@ -65,26 +72,39 @@ def _sync_ms_groups():
             frappe.get_doc({"doctype": "Microsoft Group", **ms_group}).save()
 
     # Update Group users
-    for user in user_groups:
+    for user in member_users:
         user_doc = frappe.get_doc("Microsoft User", user)
-        old_user_groups = user_doc.get("groups")
+        old_groups = user_doc.get("groups")
         has_user_updated = False
 
-        groups = {user_group.microsoft_group for user_group in old_user_groups}
+        old_group_names = {user_group.microsoft_group for user_group in old_groups}
 
-        for new_user_group in user_groups[user]:
-            if new_user_group not in groups:
+        for new_user_group in user_wise_groups[user]:
+            if new_user_group not in old_group_names:
                 user_doc.append("groups", {"microsoft_group": new_user_group})
                 has_user_updated = True
             else:
-                groups.remove(new_user_group)
+                old_group_names.remove(new_user_group)
 
-        for old_group in old_user_groups:
-            if old_group.microsoft_group in groups:
+        for old_group in old_groups:
+            if old_group.microsoft_group in old_group_names:
                 user_doc.remove(old_group)
                 has_user_updated = True
 
         if has_user_updated:
             user_doc.save()
+
+    ## Remove users that are removed from all the groups
+    old_group_members = frappe.db.get_all(
+        "Microsoft Groups",
+        ["name"],
+        {
+            "parent": ["not in", member_users],
+            "parenttype": "Microsoft User",
+            "parentfield": "groups",
+        },
+    )
+    for old_member in old_group_members:
+        frappe.get_doc("Microsoft Groups", old_member).delete()
 
     frappe.db.commit()
