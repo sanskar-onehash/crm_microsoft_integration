@@ -1,0 +1,157 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:id",
+ "creation": "2025-08-12 11:35:01.178431",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "enable",
+  "section_break_gawh",
+  "id",
+  "calendar_name",
+  "column_break_ixmc",
+  "is_default_calendar",
+  "color",
+  "owner_section",
+  "owner_name",
+  "owner_email",
+  "column_break_fvle",
+  "user",
+  "sync_section",
+  "pull_from_outlook_calendar",
+  "column_break_kgbb",
+  "push_to_outlook_calendar",
+  "section_break_erzw",
+  "change_key"
+ ],
+ "fields": [
+  {
+   "fieldname": "id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "ID",
+   "read_only": 1,
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "calendar_name",
+   "fieldtype": "Data",
+   "label": "Calendar Name",
+   "reqd": 1
+  },
+  {
+   "depends_on": "enable",
+   "fieldname": "sync_section",
+   "fieldtype": "Section Break",
+   "label": "Sync"
+  },
+  {
+   "default": "1",
+   "fieldname": "pull_from_outlook_calendar",
+   "fieldtype": "Check",
+   "label": "Pull from Outlook Calendar"
+  },
+  {
+   "fieldname": "column_break_kgbb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "push_to_outlook_calendar",
+   "fieldtype": "Check",
+   "label": "Push to Outlook Calendar"
+  },
+  {
+   "default": "1",
+   "fieldname": "enable",
+   "fieldtype": "Check",
+   "label": "Enable"
+  },
+  {
+   "depends_on": "enable",
+   "fieldname": "section_break_gawh",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_ixmc",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_default_calendar",
+   "fieldtype": "Check",
+   "label": "Is Default Calendar",
+   "read_only": 1
+  },
+  {
+   "fieldname": "color",
+   "fieldtype": "Color",
+   "label": "Color"
+  },
+  {
+   "fieldname": "owner_section",
+   "fieldtype": "Section Break",
+   "label": "Owner"
+  },
+  {
+   "fieldname": "owner_name",
+   "fieldtype": "Data",
+   "label": "Owner Name"
+  },
+  {
+   "fieldname": "owner_email",
+   "fieldtype": "Data",
+   "label": "Owner Email"
+  },
+  {
+   "fieldname": "column_break_fvle",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "label": "User",
+   "options": "User"
+  },
+  {
+   "depends_on": "enable",
+   "fieldname": "section_break_erzw",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "change_key",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Change Key"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-08-12 11:55:23.614287",
+ "modified_by": "Administrator",
+ "module": "Microsoft",
+ "name": "Outlook Calendar",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "show_title_field_in_link": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "calendar_name"
+}
