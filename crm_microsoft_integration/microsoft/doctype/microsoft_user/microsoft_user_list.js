@@ -23,7 +23,7 @@ function addSyncMSUserBtn(listview) {
               5,
             );
 
-            frappe.realtime.on(response.message.track_on, (msg) => {
+            function handleRealtimeProgress(msg) {
               progressDialog = frappe.show_progress(
                 msg.title || DIALOG_TITLE,
                 msg.progress,
@@ -40,8 +40,16 @@ function addSyncMSUserBtn(listview) {
                   },
                   5,
                 );
+                frappe.realtime.off(
+                  response.message.track_on,
+                  handleRealtimeProgress,
+                );
               }
-            });
+            }
+            frappe.realtime.on(
+              response.message.track_on,
+              handleRealtimeProgress,
+            );
           } else {
             frappe.throw(
               `Error occured during syncing users: ${response.message}`,
