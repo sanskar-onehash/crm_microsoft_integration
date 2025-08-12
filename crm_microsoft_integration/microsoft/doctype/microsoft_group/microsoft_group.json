@@ -33,11 +33,12 @@
  "index_web_pages_for_search": 1,
  "links": [
   {
-   "link_doctype": "Microsoft Groups",
-   "link_fieldname": "microsoft_group"
+   "link_doctype": "Microsoft User",
+   "link_fieldname": "microsoft_group",
+   "table_fieldname": "groups"
   }
  ],
- "modified": "2025-08-12 12:42:27.892241",
+ "modified": "2025-08-12 22:04:36.629746",
  "modified_by": "Administrator",
  "module": "Microsoft",
  "name": "Microsoft Group",
