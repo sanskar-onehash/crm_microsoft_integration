@@ -83,7 +83,7 @@ app_license = "mit"
 # ------------
 
 # before_install = "crm_microsoft_integration.install.before_install"
-# after_install = "crm_microsoft_integration.install.after_install"
+after_install = "crm_microsoft_integration.install.after_install"
 
 # Uninstallation
 # ------------
@@ -241,4 +241,3 @@ app_license = "mit"
 # default_log_clearing_doctypes = {
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
-
