@@ -183,6 +183,7 @@ def _sync_outlook_events():
                 frappe.get_doc(
                     {
                         "doctype": "Event",
+                        "custom_is_outlook_event": True,
                         **outlook_event,
                     }
                 ).save()
