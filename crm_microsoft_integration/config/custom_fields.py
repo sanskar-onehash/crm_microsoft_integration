@@ -124,7 +124,7 @@ EVENT_CUSTOM_FIELDS = [
         "insert_after": "custom_outlook_location_address",
         "fieldtype": "Small Text",
         "fieldname": "custom_outlook_meeting_link",
-        "depends_on": "custom_add_teams_meet",
+        "depends_on": "eval: doc.custom_add_teams_meet || doc.custom_outlook_meeting_link",
     },
     {
         "doctype": "Custom Field",

@@ -185,6 +185,11 @@ def _sync_outlook_events():
                         "doctype": "Event",
                         "custom_is_outlook_event": True,
                         "custom_sync_with_ms_calendar": True,
+                        "custom_add_teams_meet": (
+                            True
+                            if outlook_event["custom_outlook_meeting_link"]
+                            else False
+                        ),
                         **outlook_event,
                     }
                 ).save()
