@@ -160,6 +160,7 @@ def _sync_outlook_events():
         )
 
         for outlook_event in outlook_events[user]:
+            participants = outlook_event.pop("attendees")
             existing_event = frappe.db.exists(
                 "Event",
                 {"custom_outlook_event_id": outlook_event["custom_outlook_event_id"]},

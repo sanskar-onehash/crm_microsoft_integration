@@ -1,4 +1,5 @@
 import pytz
+from dateutil import parser
 from frappe import utils
 
 
@@ -24,15 +25,23 @@ def parse_event_res(event_res):
         )
     return {
         "id": event_res["id"],
+        "starts_on": parse_outlook_date(event_res["start"]),
+        "ends_on": parse_outlook_date(event_res["end"]),
         "change_key": event_res["changeKey"],
         "custom_outlook_event_id": event_res["iCalUId"],
         "subject": event_res["subject"],
         "all_day": event_res["isAllDay"],
         "custom_outlook_event_link": event_res["webLink"],
         "description": event_res["body"]["content"],
-        "organiser_email": event_res["organizer"]["address"],
-        "custom_outlook_meeting_link": event_res["onlineMeeting"]["joinUrl"],
-        "custom_outlook_location_address": event_res["location"].get("address"),
+        "organiser_email": event_res["organizer"]["emailAddress"]["address"],
+        "custom_outlook_meeting_link": (
+            event_res["onlineMeeting"]["joinUrl"]
+            if event_res["onlineMeeting"]
+            else None
+        ),
+        "custom_outlook_location_address": utils.json.dumps(
+            event_res["location"].get("address")
+        ),
         "event_participants": event_participants,
     }
 
@@ -104,6 +113,21 @@ def format_date_for_outlook(datetime):
         "dateTime": utils.get_datetime(datetime).isoformat(),
         "timeZone": utils.get_system_timezone(),
     }
+
+
+def parse_outlook_date(datetime_obj):
+    iso_datetime_str = datetime_obj.get("dateTime")
+    if not iso_datetime_str:
+        raise ValueError("Missing 'dateTime' in input object")
+
+    parsed_datetime = parser.isoparse(iso_datetime_str)
+
+    system_tz_name = utils.get_system_timezone()
+    system_tz = pytz.timezone(system_tz_name)
+
+    converted_datetime = parsed_datetime.astimezone(system_tz)
+
+    return converted_datetime.replace(tzinfo=None)
 
 
 def format_datetime_to_utc(datetime_obj):
