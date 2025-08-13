@@ -40,7 +40,7 @@ def parse_event_res(event_res):
             else None
         ),
         "custom_outlook_location_address": utils.json.dumps(
-            event_res["location"].get("address")
+            event_res["location"].get("address") or ""
         ),
         "event_participants": event_participants,
     }

@@ -170,7 +170,7 @@ def _sync_outlook_events():
                 event_doc = frappe.get_doc("Event", existing_event)
                 has_updated = False
 
-                for fieldname, new_value in user.items():
+                for fieldname, new_value in outlook_event.items():
                     old_value = event_doc.get(fieldname)
 
                     if old_value != new_value:

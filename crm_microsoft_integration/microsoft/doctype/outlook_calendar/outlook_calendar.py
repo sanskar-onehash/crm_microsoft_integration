@@ -73,7 +73,7 @@ def _sync_outlook_calendars():
                 calendar_doc = frappe.get_doc("Outlook Calendar", existing_calendar)
                 has_updated = False
 
-                for fieldname, new_value in user.items():
+                for fieldname, new_value in ol_calendar.items():
                     old_value = calendar_doc.get(fieldname)
 
                     if old_value != new_value:
