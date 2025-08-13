@@ -7,13 +7,14 @@
  "field_order": [
   "id",
   "group_name",
+  "class_id",
   "section_break_hren",
   "change_key"
  ],
  "fields": [
   {
    "fieldname": "id",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "in_list_view": 1,
    "label": "ID",
    "read_only": 1,
@@ -35,6 +36,12 @@
    "fieldtype": "Data",
    "hidden": 1,
    "label": "Change Key"
+  },
+  {
+   "fieldname": "class_id",
+   "fieldtype": "Data",
+   "label": "Class ID",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
@@ -44,7 +51,7 @@
    "link_fieldname": "calendar_group"
   }
  ],
- "modified": "2025-08-12 12:21:32.031498",
+ "modified": "2025-08-13 00:49:41.524618",
  "modified_by": "Administrator",
  "module": "Microsoft",
  "name": "Outlook Calendar Group",
