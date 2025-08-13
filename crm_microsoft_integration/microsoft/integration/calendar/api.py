@@ -6,7 +6,7 @@ ENDPOINT_BASE = "/users"
 def get_user_calendars(user_id, group_id=None):
     return utils.make_get_request(
         config.GRAPH_BASE_URI,
-        f"{ENDPOINT_BASE}/{user_id}{'/calendarGroups' if group_id else ''}/calendars",
+        f"{ENDPOINT_BASE}/{user_id}{f'/calendarGroups/{group_id}' if group_id else ''}/calendars",
     )
 
 
