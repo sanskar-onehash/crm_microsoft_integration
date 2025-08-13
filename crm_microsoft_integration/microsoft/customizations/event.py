@@ -184,6 +184,7 @@ def _sync_outlook_events():
                     {
                         "doctype": "Event",
                         "custom_is_outlook_event": True,
+                        "custom_sync_with_ms_calendar": True,
                         **outlook_event,
                     }
                 ).save()
