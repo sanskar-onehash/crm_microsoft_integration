@@ -43,6 +43,40 @@ def make_post_request(
     return res.json()
 
 
+def make_patch_request(
+    base_uri, endpoint, auth=True, headers=None, params=None, data=None, json=None
+):
+    headers = prepare_headers(headers, auth)
+
+    res = requests.patch(
+        f"{base_uri}{endpoint}",
+        headers=headers,
+        params=params,
+        data=data,
+        json=json,
+    )
+    res.raise_for_status()
+
+    return res.json()
+
+
+def make_delete_request(
+    base_uri, endpoint, auth=True, headers=None, params=None, data=None, json=None
+):
+    headers = prepare_headers(headers, auth)
+
+    res = requests.delete(
+        f"{base_uri}{endpoint}",
+        headers=headers,
+        params=params,
+        data=data,
+        json=json,
+    )
+    res.raise_for_status()
+
+    return res.json()
+
+
 def get_redirect_uri():
     return f"{utils.get_url()}{config.APP_REDIRECT_ENDPOINT}"
 

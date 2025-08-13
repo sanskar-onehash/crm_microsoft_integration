@@ -44,7 +44,7 @@ app_license = "mit"
 
 # include js in doctype views
 # doctype_js = {"doctype" : "public/js/doctype.js"}
-# doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
+doctype_list_js = {"Event": "public/js/event_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
 
@@ -137,13 +137,13 @@ after_install = "crm_microsoft_integration.install.after_install"
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+    "Event": {
+        "after_insert": "crm_microsoft_integration.microsoft.customizations.event.event_after_insert",
+        "on_update": "crm_microsoft_integration.microsoft.customizations.event.event_on_update",
+        "on_trash": "crm_microsoft_integration.microsoft.customizations.event.event_on_trash",
+    },
+}
 
 # Scheduled Tasks
 # ---------------

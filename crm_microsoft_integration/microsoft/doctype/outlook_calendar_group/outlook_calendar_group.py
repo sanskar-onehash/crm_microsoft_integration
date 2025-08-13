@@ -56,7 +56,7 @@ def _sync_outlook_calendar_groups():
                 cal_group_doc = frappe.get_doc("Outlook Calendar Group", cal_group_name)
                 has_updated = False
 
-                for fieldname, new_value in user.items():
+                for fieldname, new_value in user_cal_group.items():
                     old_value = cal_group_doc.get(fieldname)
 
                     if old_value != new_value:
