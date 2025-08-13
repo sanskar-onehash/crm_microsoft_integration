@@ -122,7 +122,7 @@ EVENT_CUSTOM_FIELDS = [
         "dt": "Event",
         "label": "Teams Meet Link",
         "insert_after": "custom_outlook_location_address",
-        "fieldtype": "Data",
+        "fieldtype": "Small Text",
         "fieldname": "custom_outlook_meeting_link",
         "depends_on": "custom_add_teams_meet",
     },
