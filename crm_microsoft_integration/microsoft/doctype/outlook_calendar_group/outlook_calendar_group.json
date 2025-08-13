@@ -51,7 +51,7 @@
    "link_fieldname": "calendar_group"
   }
  ],
- "modified": "2025-08-13 00:49:41.524618",
+ "modified": "2025-08-13 06:38:26.568323",
  "modified_by": "Administrator",
  "module": "Microsoft",
  "name": "Outlook Calendar Group",
@@ -70,7 +70,9 @@
    "write": 1
   }
  ],
+ "show_title_field_in_link": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "title_field": "group_name"
 }
