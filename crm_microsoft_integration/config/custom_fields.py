@@ -49,7 +49,7 @@ EVENT_CUSTOM_FIELDS = [
         "dt": "Event",
         "label": "Outlook Calendar ID",
         "insert_after": "custom_outlook_calendar",
-        "fieldtype": "Data",
+        "fieldtype": "Small Text",
         "fieldname": "custom_outlook_calendar_id",
         "fetch_from": "custom_outlook_calendar.id",
         "read_only": 1,
