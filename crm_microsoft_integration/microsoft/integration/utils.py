@@ -74,7 +74,7 @@ def make_delete_request(
     )
     res.raise_for_status()
 
-    return res.json()
+    return res
 
 
 def get_redirect_uri():
