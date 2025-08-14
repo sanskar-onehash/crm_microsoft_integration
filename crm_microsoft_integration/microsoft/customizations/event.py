@@ -1,5 +1,5 @@
 import frappe
-from frappe import _
+from frappe import _, utils
 from crm_microsoft_integration.microsoft.integration.event import event
 
 SYNC_OUTLOOK_EVENT_TIMEOUT = 25 * 60
@@ -21,8 +21,9 @@ def event_after_insert(doc, method=None):
     if not outlook_calendar.push_to_outlook_calendar:
         return
 
+    microsoft_user_doc = frappe.get_doc("Microsoft User", doc.custom_outlook_organiser)
     outlook_event, missing_email_participants = event.insert_cal_event(
-        doc, outlook_calendar
+        doc, microsoft_user_doc, outlook_calendar
     )
 
     if missing_email_participants:
@@ -39,21 +40,13 @@ def event_after_insert(doc, method=None):
             indicator="yellow",
         )
 
-    has_updated = False
-    for fieldname, new_value in outlook_event.items():
-        old_value = doc.get(fieldname)
-
-        if old_value != new_value:
-            doc.set(fieldname, new_value)
-            has_updated = True
-
-    if has_updated:
-        doc.save()
+    check_and_set_updates_to_db(doc, outlook_event)
 
 
 def event_on_update(doc, method=None):
     if (
-        not doc.custom_sync_with_ms_calendar
+        doc.is_new()
+        or not doc.custom_sync_with_ms_calendar
         or doc.custom_is_outlook_event
         or not frappe.db.exists(
             "Outlook Calendar", {"name": doc.custom_outlook_calendar}
@@ -70,8 +63,9 @@ def event_on_update(doc, method=None):
     if not outlook_calendar.push_to_outlook_calendar:
         return
 
+    microsoft_user_doc = frappe.get_doc("Microsoft User", doc.custom_outlook_organiser)
     outlook_event, missing_email_participants = event.update_cal_event(
-        doc, outlook_calendar
+        doc, microsoft_user_doc, outlook_calendar
     )
 
     if missing_email_participants:
@@ -88,24 +82,7 @@ def event_on_update(doc, method=None):
             indicator="yellow",
         )
 
-    # has_updated = False
-    for fieldname, new_value in outlook_event.items():
-        old_value = doc.get(fieldname)
-
-        if old_value != new_value:
-            frappe.log_error(
-                "outlook event on update change",
-                {
-                    "fieldname": fieldname,
-                    "old_value": old_value,
-                    "new_value": new_value,
-                },
-            )
-            # doc.set(fieldname, new_value)
-            # has_updated = True
-
-    # if has_updated:
-    #     doc.save()
+    check_and_set_updates_to_db(doc, outlook_event)
 
 
 def event_on_trash(doc, method=None):
@@ -122,9 +99,38 @@ def event_on_trash(doc, method=None):
     if not outlook_calendar.push_to_outlook_calendar:
         return
 
-    event.delete_cal_event(
+    delete_res = event.delete_cal_event(
         doc.custom_outlook_event_id, doc.custom_outlook_organiser, outlook_calendar.id
     )
+
+    if delete_res != "success":
+        frappe.msgprint(
+            _("Outlook Server responded with: {0}").format(delete_res),
+            alert=True,
+            indicator="yellow",
+        )
+
+
+def check_and_set_updates_to_db(event_doc, new_event):
+    new_updates = {}
+    for fieldname, new_value in new_event.items():
+        old_value = event_doc.get(fieldname)
+
+        if isinstance(new_value, utils.datetime.datetime):
+            old_value_dt = utils.get_datetime(old_value)
+            if old_value_dt != new_value:
+                new_updates[fieldname] = utils.get_datetime_str(new_value)
+
+        elif old_value != new_value:
+            new_updates[fieldname] = new_value
+
+    if new_updates:
+        event_doc.db_set(
+            new_updates,
+            update_modified=False,
+            notify=True,
+            commit=True,
+        )
 
 
 @frappe.whitelist()

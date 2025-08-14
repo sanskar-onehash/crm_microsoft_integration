@@ -1,5 +1,4 @@
 import pytz
-from dateutil import parser
 from frappe import utils
 
 
@@ -24,16 +23,16 @@ def parse_event_res(event_res):
             }
         )
     return {
-        "id": event_res["id"],
+        "custom_outlook_event_id": event_res["id"],
         "starts_on": parse_outlook_date(event_res["start"]),
         "ends_on": parse_outlook_date(event_res["end"]),
-        "change_key": event_res["changeKey"],
-        "custom_outlook_event_id": event_res["iCalUId"],
+        "custom_outlook_change_key": event_res["changeKey"],
+        "custom_outlook_event_uid": event_res["iCalUId"],
         "subject": event_res["subject"],
         "all_day": event_res["isAllDay"],
         "custom_outlook_event_link": event_res["webLink"],
         "description": event_res["body"]["content"],
-        "organiser_email": event_res["organizer"]["emailAddress"]["address"],
+        # "organiser_email": event_res["organizer"]["emailAddress"]["address"],
         "custom_outlook_meeting_link": (
             event_res["onlineMeeting"]["joinUrl"]
             if event_res["onlineMeeting"]
@@ -46,22 +45,27 @@ def parse_event_res(event_res):
     }
 
 
-def outlook_event_from_event_doc(event_doc, calendar_doc=None):
+def outlook_event_from_event_doc(event_doc, organizer_doc=None, calendar_doc=None):
     is_online_meeting = event_doc.custom_add_teams_meet
-    attendees, email_not_found = get_attendees_from_event(event_doc)
+    attendees, email_not_found = get_outlook_attendees_from_event(event_doc)
+    organizer = get_outlook_organizer_from_user(organizer_doc)
+
     return {
         "subject": event_doc.subject,
         "attendees": attendees,
-        "body": {"contentType": "html", "content": event_doc.description},
+        "body": {
+            "contentType": "HTML",
+            "content": event_doc.description,
+        },
         "changeKey": event_doc.custom_outlook_change_key,
-        "createdDateTime": format_datetime_to_utc(event_doc.creation),
-        "lastModifiedDateTime": format_datetime_to_utc(event_doc.modified),
+        "createdDateTime": format_datetime_to_utc_iso(event_doc.creation),
+        "lastModifiedDateTime": format_datetime_to_utc_iso(event_doc.modified),
         "start": format_date_for_outlook(event_doc.starts_on),
         "end": format_date_for_outlook(event_doc.ends_on),
         "iCalUId": event_doc.custom_outlook_event_uid,
         "id": event_doc.custom_outlook_event_id,
-        "isAllDay": event_doc.all_day,
-        "isOnlineMeeting": is_online_meeting,
+        "isAllDay": bool(event_doc.all_day),
+        "isOnlineMeeting": bool(is_online_meeting),
         "onlineMeetingProvider": ("teamsForBusiness" if is_online_meeting else None),
         "onlineMeeting": {
             "joinUrl": (
@@ -74,16 +78,18 @@ def outlook_event_from_event_doc(event_doc, calendar_doc=None):
         },
         "isOrganizer": calendar_doc
         and event_doc.custom_outlook_organiser == calendar_doc.microsoft_user,
-        "organizer": event_doc.custom_outlook_organiser,
-        "recurrence": False,
+        "organizer": organizer,
         "showAs": "busy",
         "type": "singleInstance",
         "webLink": event_doc.custom_outlook_event_link,
-        "responseStatus": {"response": "organizer", "time": event_doc.creation},
+        "responseStatus": {
+            "response": "organizer",
+            "time": format_datetime_to_utc_iso(event_doc.creation),
+        },
     }, email_not_found
 
 
-def get_attendees_from_event(event_doc):
+def get_outlook_attendees_from_event(event_doc):
     attendees, email_not_found = [], []
 
     for participant in event_doc.event_participants:
@@ -108,6 +114,17 @@ def get_attendees_from_event(event_doc):
     return attendees, email_not_found
 
 
+def get_outlook_organizer_from_user(organizer_user_doc=None):
+    if organizer_user_doc:
+        return {
+            "emailAddress": {
+                "name": organizer_user_doc.display_name,
+                "address": organizer_user_doc.mail or organizer_user_doc.principal_name,
+            }
+        }
+    return None
+
+
 def parse_location_address_to_html(address):
     address_html = "<div>"
     for key in address:
@@ -125,10 +142,15 @@ def format_date_for_outlook(datetime):
 
 def parse_outlook_date(datetime_obj):
     iso_datetime_str = datetime_obj.get("dateTime")
+    datetime_tz = datetime_obj.get("timeZone")
     if not iso_datetime_str:
         raise ValueError("Missing 'dateTime' in input object")
+    if not datetime_tz:
+        raise ValueError("Missing 'timeZone' in input object")
 
-    parsed_datetime = parser.isoparse(iso_datetime_str)
+    parsed_datetime = pytz.timezone(datetime_tz).localize(
+        utils.get_datetime(iso_datetime_str)
+    )
 
     system_tz_name = utils.get_system_timezone()
     system_tz = pytz.timezone(system_tz_name)
@@ -138,5 +160,10 @@ def parse_outlook_date(datetime_obj):
     return converted_datetime.replace(tzinfo=None)
 
 
-def format_datetime_to_utc(datetime_obj):
-    return utils.get_datetime(datetime_obj).astimezone(pytz.UTC)
+def format_datetime_to_utc_iso(datetime_obj):
+    return (
+        utils.get_datetime(datetime_obj)
+        .astimezone(pytz.UTC)
+        .isoformat()
+        .replace("+00:00", "Z")
+    )

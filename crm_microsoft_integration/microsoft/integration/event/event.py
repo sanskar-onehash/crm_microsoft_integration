@@ -1,3 +1,4 @@
+from requests.exceptions import HTTPError
 from crm_microsoft_integration.microsoft.integration.event import api, utils
 
 
@@ -15,9 +16,9 @@ def get_user_events(user, calendar_events=False, calendar_id=None, group_id=None
     return utils.parse_events_res(events_res)
 
 
-def insert_cal_event(event_doc, calendar_doc):
+def insert_cal_event(event_doc, orgainzer_user_doc, calendar_doc):
     outlook_event, missing_email_participants = utils.outlook_event_from_event_doc(
-        event_doc, calendar_doc
+        event_doc, orgainzer_user_doc, calendar_doc
     )
     event_res = api.create_user_event(
         outlook_event, event_doc.custom_outlook_organiser, calendar_id=calendar_doc.id
@@ -27,9 +28,9 @@ def insert_cal_event(event_doc, calendar_doc):
     return event, missing_email_participants
 
 
-def update_cal_event(event_doc, calendar_doc):
+def update_cal_event(event_doc, orgainzer_user_doc, calendar_doc):
     outlook_event, missing_email_participants = utils.outlook_event_from_event_doc(
-        event_doc, calendar_doc
+        event_doc, orgainzer_user_doc, calendar_doc
     )
 
     event_res = api.update_user_event(
@@ -41,4 +42,12 @@ def update_cal_event(event_doc, calendar_doc):
 
 
 def delete_cal_event(event_id, user_id, calendar_id=None):
-    api.delete_user_event(event_id, user_id, calendar_id=calendar_id)
+    try:
+        api.delete_user_event(event_id, user_id, calendar_id=calendar_id)
+        return "success"
+    except HTTPError as e:
+        if e.response.status_code == 404:
+            # Prevent raise error if event already deleted
+            return "Event not found"
+        else:
+            raise e

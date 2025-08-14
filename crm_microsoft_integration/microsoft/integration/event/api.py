@@ -24,9 +24,9 @@ def get_user_events(user_id, calendar_events=False, calendar_id=None, group_id=N
 def create_user_event(event, user_id, calendar_events=False, calendar_id=None):
     events_endpoint = f"{ENDPOINT_BASE}/{user_id}"
     if calendar_id or calendar_events:
-        events_endpoint = f"/calendar{f's/{calendar_id}' if calendar_id else ''}"
+        events_endpoint += f"/calendar{f's/{calendar_id}' if calendar_id else ''}"
 
-    events_endpoint = events_endpoint + EVENTS_ENDPOINT
+    events_endpoint += EVENTS_ENDPOINT
 
     return utils.make_post_request(config.GRAPH_BASE_URI, events_endpoint, json=event)
 
@@ -36,9 +36,9 @@ def update_user_event(
 ):
     events_endpoint = f"{ENDPOINT_BASE}/{user_id}"
     if calendar_id or calendar_events:
-        events_endpoint = f"{f'/calendarGroups/{group_id}' if group_id else ''}/calendar{f's/{calendar_id}' if calendar_id else ''}"
+        events_endpoint += f"{f'/calendarGroups/{group_id}' if group_id else ''}/calendar{f's/{calendar_id}' if calendar_id else ''}"
 
-    events_endpoint = events_endpoint + EVENTS_ENDPOINT + f"/{event['id']}"
+    events_endpoint += EVENTS_ENDPOINT + f"/{event['id']}"
 
     return utils.make_patch_request(config.GRAPH_BASE_URI, events_endpoint, json=event)
 
@@ -48,8 +48,8 @@ def delete_user_event(
 ):
     events_endpoint = f"{ENDPOINT_BASE}/{user_id}"
     if calendar_id or calendar_events:
-        events_endpoint = f"{f'/calendarGroups/{group_id}' if group_id else ''}/calendar{f's/{calendar_id}' if calendar_id else ''}"
+        events_endpoint += f"{f'/calendarGroups/{group_id}' if group_id else ''}/calendar{f's/{calendar_id}' if calendar_id else ''}"
 
-    events_endpoint = events_endpoint + EVENTS_ENDPOINT + f"/{event_id}"
+    events_endpoint += EVENTS_ENDPOINT + f"/{event_id}"
 
     return utils.make_delete_request(config.GRAPH_BASE_URI, events_endpoint)
