@@ -39,8 +39,8 @@ def parse_event_res(event_res):
             if event_res["onlineMeeting"]
             else None
         ),
-        "custom_outlook_location_address": utils.json.dumps(
-            event_res["location"].get("address") or ""
+        "custom_outlook_location_address": parse_location_address_to_html(
+            event_res["location"].get("address") or {}
         ),
         "event_participants": event_participants,
     }
@@ -106,6 +106,14 @@ def get_attendees_from_event(event_doc):
             )
 
     return attendees, email_not_found
+
+
+def parse_location_address_to_html(address):
+    address_html = "<div>"
+    for key in address:
+        address_html = address_html + f"<p><strong>{key}:</strong> {address[key]}</p>"
+    address_html = address_html + "</div>"
+    return address_html
 
 
 def format_date_for_outlook(datetime):
