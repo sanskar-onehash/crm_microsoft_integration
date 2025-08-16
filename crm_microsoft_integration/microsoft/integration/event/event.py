@@ -5,9 +5,13 @@ from crm_microsoft_integration.microsoft.integration.event import api, utils
 def get_users_events(users, calendar_events=False, calendar_id=None, group_id=None):
     user_wise_events = {}
     for user in users:
-        user_wise_events[user] = get_user_events(
-            user, calendar_events, calendar_id, group_id
-        )
+        try:
+            user_wise_events[user] = get_user_events(
+                user, calendar_events, calendar_id, group_id
+            )
+        except HTTPError as e:
+            if e.response.status_code == 404:
+                user_wise_events[user] = []
     return user_wise_events
 
 
