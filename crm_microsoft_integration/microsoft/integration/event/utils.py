@@ -17,15 +17,15 @@ def parse_event_res(event_res):
             {
                 "is_required": attendee["type"] == "required",
                 "response": attendee["status"]["response"],
-                "response_time": attendee["status"]["time"],
+                "response_time": parse_outlook_date(attendee["status"]["time"]),
                 "participant_name": attendee["emailAddress"]["name"],
                 "email": attendee["emailAddress"]["address"],
             }
         )
     return {
         "custom_outlook_event_id": event_res["id"],
-        "starts_on": parse_outlook_date(event_res["start"]),
-        "ends_on": parse_outlook_date(event_res["end"]),
+        "starts_on": parse_outlook_date_object(event_res["start"]),
+        "ends_on": parse_outlook_date_object(event_res["end"]),
         "custom_outlook_change_key": event_res["changeKey"],
         "custom_outlook_event_uid": event_res["iCalUId"],
         "subject": event_res["subject"],
@@ -140,7 +140,7 @@ def format_date_for_outlook(datetime):
     }
 
 
-def parse_outlook_date(datetime_obj):
+def parse_outlook_date_object(datetime_obj):
     iso_datetime_str = datetime_obj.get("dateTime")
     datetime_tz = datetime_obj.get("timeZone")
     if not iso_datetime_str:
@@ -152,12 +152,7 @@ def parse_outlook_date(datetime_obj):
         utils.get_datetime(iso_datetime_str)
     )
 
-    system_tz_name = utils.get_system_timezone()
-    system_tz = pytz.timezone(system_tz_name)
-
-    converted_datetime = parsed_datetime.astimezone(system_tz)
-
-    return converted_datetime.replace(tzinfo=None)
+    return parse_outlook_date(parsed_datetime)
 
 
 def format_datetime_to_utc_iso(datetime_obj):
@@ -167,3 +162,13 @@ def format_datetime_to_utc_iso(datetime_obj):
         .isoformat()
         .replace("+00:00", "Z")
     )
+
+
+def parse_outlook_date(datetime_like_obj):
+    system_tz_name = utils.get_system_timezone()
+    system_tz = pytz.timezone(system_tz_name)
+
+    datetime = utils.get_datetime(datetime_like_obj)
+    if datetime:
+        return datetime.astimezone(system_tz).replace(tzinfo=None)
+    return None

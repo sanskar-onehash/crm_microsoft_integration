@@ -229,17 +229,18 @@ def check_and_set_participants_updates_to_db(
     next_outlook_idx = len(prev_outlook_particpants) + 1
 
     for new_participant in outlook_participants or []:
-        if new_participant.email in prev_doc_participants:
+        new_participant_email = new_participant.get("email")
+        if new_participant_email in prev_doc_participants:
             check_and_set_updates_to_db(
-                prev_doc_participants[new_participant.email],
+                prev_doc_participants[new_participant_email],
                 outlook_partcipant_to_event(new_participant),
                 update_modified=update_modified,
                 notify=notify,
                 commit=commit,
             )
-        elif new_participant.email in prev_outlook_particpants:
+        elif new_participant_email in prev_outlook_particpants:
             check_and_set_updates_to_db(
-                prev_outlook_particpants[new_participant.email],
+                prev_outlook_particpants[new_participant_email],
                 new_participant,
                 update_modified=update_modified,
                 notify=notify,
