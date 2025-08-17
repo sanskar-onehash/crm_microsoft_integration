@@ -15,10 +15,10 @@ def parse_event_res(event_res):
     for attendee in event_res["attendees"]:
         event_participants.append(
             {
-                "custom_required": attendee["type"] == "required",
-                "custom_response": attendee["status"]["response"],
-                "custom_response_time": attendee["status"]["time"],
-                "custom_participant_name": attendee["emailAddress"]["name"],
+                "is_required": attendee["type"] == "required",
+                "response": attendee["status"]["response"],
+                "response_time": attendee["status"]["time"],
+                "participant_name": attendee["emailAddress"]["name"],
                 "email": attendee["emailAddress"]["address"],
             }
         )

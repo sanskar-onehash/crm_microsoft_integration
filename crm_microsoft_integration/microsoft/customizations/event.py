@@ -111,28 +111,6 @@ def event_on_trash(doc, method=None):
         )
 
 
-def check_and_set_updates_to_db(event_doc, new_event):
-    new_updates = {}
-    for fieldname, new_value in new_event.items():
-        old_value = event_doc.get(fieldname)
-
-        if isinstance(new_value, utils.datetime.datetime):
-            old_value_dt = utils.get_datetime(old_value)
-            if old_value_dt != new_value:
-                new_updates[fieldname] = utils.get_datetime_str(new_value)
-
-        elif old_value != new_value:
-            new_updates[fieldname] = new_value
-
-    if new_updates:
-        event_doc.db_set(
-            new_updates,
-            update_modified=False,
-            notify=True,
-            commit=True,
-        )
-
-
 @frappe.whitelist()
 def sync_outlook_events():
     frappe.enqueue(
@@ -166,7 +144,6 @@ def _sync_outlook_events():
         )
 
         for outlook_event in outlook_events[user]:
-            participants = outlook_event.pop("event_participants")
             existing_event = frappe.db.exists(
                 "Event",
                 {"custom_outlook_event_id": outlook_event["custom_outlook_event_id"]},
@@ -174,19 +151,12 @@ def _sync_outlook_events():
 
             if existing_event:
                 event_doc = frappe.get_doc("Event", existing_event)
-                has_updated = False
-
-                for fieldname, new_value in outlook_event.items():
-                    old_value = event_doc.get(fieldname)
-
-                    if old_value != new_value:
-                        event_doc.set(fieldname, new_value)
-                        has_updated = True
-
-                if has_updated:
-                    event_doc.save()
+                check_and_set_updates_to_db(
+                    event_doc, outlook_event, update_modified=True, commit=False
+                )
             else:
-                frappe.get_doc(
+                participants = outlook_event.pop("event_participants")
+                event_doc = frappe.get_doc(
                     {
                         "doctype": "Event",
                         "custom_is_outlook_event": True,
@@ -199,4 +169,101 @@ def _sync_outlook_events():
                         **outlook_event,
                     }
                 ).save()
+                check_and_set_participants_updates_to_db(
+                    event_doc, participants, update_modified=True, commit=False
+                )
     frappe.db.commit()
+
+
+def check_and_set_updates_to_db(
+    old_doc,
+    new_values,
+    update_modified=False,
+    notify=True,
+    commit=True,
+):
+    new_updates = {}
+    for fieldname, new_value in new_values.items():
+        old_value = old_doc.get(fieldname)
+
+        if fieldname == "event_participants":
+            check_and_set_participants_updates_to_db(
+                old_doc,
+                new_value,
+                update_modified=update_modified,
+                notify=notify,
+                commit=commit,
+            )
+
+        elif isinstance(new_value, utils.datetime.datetime):
+            old_value_dt = utils.get_datetime(old_value)
+            if old_value_dt != new_value:
+                new_updates[fieldname] = utils.get_datetime_str(new_value)
+
+        elif old_value != new_value:
+            new_updates[fieldname] = new_value
+
+    if new_updates:
+        old_doc.db_set(
+            new_updates,
+            update_modified=update_modified,
+            notify=notify,
+            commit=commit,
+        )
+
+
+def check_and_set_participants_updates_to_db(
+    event_doc,
+    outlook_participants,
+    update_modified=False,
+    notify=True,
+    commit=True,
+):
+    prev_doc_participants = {
+        participant.email: participant for participant in event_doc.event_participants
+    }
+    prev_outlook_particpants = {
+        participant.email: participant
+        for participant in event_doc.custom_outlook_participants
+    }
+    next_outlook_idx = len(prev_outlook_particpants) + 1
+
+    for new_participant in outlook_participants or []:
+        if new_participant.email in prev_doc_participants:
+            check_and_set_updates_to_db(
+                prev_doc_participants[new_participant.email],
+                outlook_partcipant_to_event(new_participant),
+                update_modified=update_modified,
+                notify=notify,
+                commit=commit,
+            )
+        elif new_participant.email in prev_outlook_particpants:
+            check_and_set_updates_to_db(
+                prev_outlook_particpants[new_participant.email],
+                new_participant,
+                update_modified=update_modified,
+                notify=notify,
+                commit=commit,
+            )
+        else:
+            frappe.get_doc(
+                {
+                    "doctype": "Outlook Event Participants",
+                    "parent": event_doc.name,
+                    "parenttype": event_doc.doctype,
+                    "parentfield": "custom_outlook_participants",
+                    "idx": next_outlook_idx,
+                    **outlook_participants,
+                }
+            ).save()
+            next_outlook_idx += 1
+
+
+def outlook_partcipant_to_event(outlook_participant):
+    return {
+        "email": outlook_participant.get("email"),
+        "custom_participant_name": outlook_participant.get("participant_name"),
+        "custom_required": outlook_participant.get("is_required"),
+        "custom_response": outlook_participant.get("response"),
+        "custom_response_time": outlook_participant.get("response_time"),
+    }

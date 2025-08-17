@@ -24,7 +24,7 @@ EVENT_CUSTOM_FIELDS = [
         "insert_after": "pulled_from_google_calendar",
         "fieldtype": "Section Break",
         "fieldname": "custom_section_break_outlook",
-        "collapsible": 1,
+        "collapsible": 0,
         "depends_on": "eval:doc.custom_sync_with_ms_calendar || doc.custom_is_outlook_event",
     },
     {
@@ -143,6 +143,17 @@ EVENT_CUSTOM_FIELDS = [
         "fieldtype": "Data",
         "fieldname": "custom_outlook_change_key",
         "hidden": 1,
+    },
+    {
+        "doctype": "Custom Field",
+        "dt": "Event",
+        "label": "Outlook Participants",
+        "insert_after": "event_participants",
+        "fieldtype": "Table",
+        "options": "Outlook Event Participants",
+        "fieldname": "custom_outlook_participants",
+        "read_only": 1,
+        "depends_on": "eval:doc.custom_sync_with_ms_calendar || doc.custom_is_outlook_event",
     },
 ]
 
