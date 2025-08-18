@@ -91,7 +91,13 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
           doc: values,
         },
         callback: function (res) {
-          //
+          if (!res.exc) {
+            me.slot_dialog.hide();
+            frappe.show_alert({
+              message: "Event Scheduled successfully.",
+              indicator: "green",
+            });
+          }
         },
       });
     };
