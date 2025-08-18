@@ -11,5 +11,7 @@ class OutlookEventSlot(Document):
 
 @frappe.whitelist()
 def create_slot(doc):
+    if isinstance(doc, str):
+        doc = frappe.parse_json(doc)
     frappe.get_doc({"doctype": "Outlook Event Slot", **doc}).save()
     return "success"

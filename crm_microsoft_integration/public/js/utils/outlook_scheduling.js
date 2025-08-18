@@ -130,7 +130,7 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
       {
         label: "Organiser",
         fieldtype: "Link",
-        fieldname: "orgainser",
+        fieldname: "organiser",
         options: "Microsoft User",
         reqd: 1,
       },
