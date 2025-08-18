@@ -2,10 +2,11 @@ frappe.provide("microsoft.utils");
 frappe.provide("microsoft.utils.outlook_scheduling");
 
 $.extend(microsoft.utils.outlook_scheduling, {
-  schedule_new_event(frm, scheduled_events_wrapper) {
+  schedule_new_event(frm, scheduled_events_wrapper, default_data = {}) {
     return new microsoft.utils.OutlookScheduling({
       frm,
       scheduled_events_wrapper,
+      default_data,
     });
   },
 });
@@ -61,7 +62,6 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
     let _schedule_event = () => {
       me.load_lib().then(async () => {
         me.slot_dialog = await me.get_slot_dialog(me.default_data);
-        window.mad = me;
         me.slot_dialog.show();
       });
     };
