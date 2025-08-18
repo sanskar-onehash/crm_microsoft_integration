@@ -1,0 +1,44 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-08-18 08:19:04.219496",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "starts_on",
+  "column_break_wtfy",
+  "ends_on"
+ ],
+ "fields": [
+  {
+   "fieldname": "starts_on",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Starts On",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_wtfy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "ends_on",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Ends On"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-08-18 08:19:35.641454",
+ "modified_by": "Administrator",
+ "module": "Microsoft",
+ "name": "Outlook Slot Proposals",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
