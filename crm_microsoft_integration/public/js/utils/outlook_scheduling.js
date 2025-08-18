@@ -32,10 +32,11 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
     // }
 
     frappe.call({
-      method: "crm_microsoft_integration.microsoft.utils.get_scheduled_events",
+      method: "crm_microsoft_integration.microsoft.utils.get_reference_events",
       args: {
         ref_doctype: this.frm.doc.doctype,
         ref_docname: this.frm.doc.name,
+        with_slots: true,
       },
       callback: (r) => {
         if (!r.exc) {
