@@ -7,9 +7,6 @@ def get_reference_events(ref_doctype, ref_docname, with_slots=False):
     events = get_scheduled_events(ref_doctype, ref_docname)
     for e in events:
         e["type"] = "event"
-        e["time_slots"] = [
-            {"starts_on": e.pop("starts_on"), "ends_on": e.pop("ends_on")}
-        ]
 
     slots = get_scheduled_slots(ref_doctype, ref_docname) if with_slots else []
     for s in slots:
