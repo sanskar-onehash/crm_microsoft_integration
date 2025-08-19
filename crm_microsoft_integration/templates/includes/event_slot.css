@@ -1,0 +1,319 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  background: #e0f6fa; /* lighten primary (#0891b2, ~42%) */
+  color: #111;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100dvh;
+}
+
+.booking-container {
+  width: 100%;
+  max-width: 720px;
+  padding: 1.5rem;
+}
+
+.booking-container .booking-card,
+.booking-container .confirmation-card {
+  background: white;
+  border-radius: 1.25rem;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  padding: 2rem;
+  transition: all 0.3s ease;
+}
+
+.booking-container .hidden {
+  display: none;
+}
+
+.booking-container .booking-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.booking-container .booking-header .left {
+  flex: 1;
+}
+
+.booking-container .booking-header .left .subject {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.booking-container .booking-header .left .subject i {
+  font-size: 1.2rem;
+  color: #0891b2;
+}
+
+.booking-container .booking-header .left {
+  color: #444;
+  font-size: 0.95rem;
+}
+
+.booking-container .booking-header .badge {
+  padding: 0.35rem 0.7rem;
+  border-radius: 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.booking-container .booking-header .badge.confirmed {
+  background: #16a34a;
+  color: white;
+}
+
+.booking-container .booking-header .badge.unconfirmed {
+  background: #e5e7eb;
+  color: #333;
+}
+
+.booking-container .booking-content {
+  margin-top: 1.5rem;
+}
+
+.booking-container .description {
+  color: #444;
+  font-size: 0.95rem;
+  margin-bottom: 2rem;
+}
+
+.booking-container .attendance-options {
+  margin: 1.5rem 0;
+}
+
+.booking-container .attendance-options h3 {
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.booking-container .attendance-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr 1fr;
+}
+
+.booking-container .attendance-grid input[type="radio"] {
+  display: none;
+}
+
+.booking-container .attendance-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  padding: 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.75rem;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  user-select: none;
+}
+
+.booking-container .attendance-card i {
+  font-size: 1.5rem;
+  color: #0891b2;
+  flex-shrink: 0;
+}
+
+.booking-container .attendance-card .title {
+  font-weight: 600;
+  margin: 0;
+  font-size: 1rem;
+  color: #111;
+}
+
+.booking-container .attendance-card .subtitle {
+  font-size: 0.9rem;
+  color: #555;
+  margin-top: 0.2rem;
+}
+
+.booking-container .attendance-card:hover {
+  border-color: #0891b2;
+  box-shadow: 0 3px 8px rgba(8, 145, 178, 0.15);
+  transform: translateY(-2px);
+}
+
+/* When selected */
+.booking-container
+  .attendance-grid
+  input[type="radio"]:checked
+  + .attendance-card {
+  border-color: #0891b2;
+  background: #d9f2f6;
+  box-shadow: 0 3px 10px rgba(8, 145, 178, 0.25);
+}
+
+.booking-container .info-box {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: #f9fafb;
+  padding: 0.9rem 1rem;
+  border: 1px solid #eee;
+  border-radius: 0.75rem;
+  margin: 1rem 0;
+}
+
+.booking-container .info-box i {
+  color: #0891b2;
+}
+
+.booking-container .info-box .title {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.booking-container .repeat-info {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: #f3f4f6;
+  padding: 0.8rem 1rem;
+  margin-top: 2rem;
+  border-radius: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.booking-container .repeat-info i {
+  color: #0891b2;
+}
+
+.booking-container .slots {
+  margin-top: 1.5rem;
+}
+
+.booking-container .slots h3 {
+  font-weight: 600;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.booking-container .slots h3 i {
+  color: #0891b2;
+}
+
+.booking-container .slot-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+.booking-container .slot-btn {
+  border: 2px solid #ddd;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.booking-container .slot-btn .time {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.booking-container .slot-btn .time i {
+  color: #0891b2;
+}
+
+.booking-container .slot-btn:hover {
+  border-color: #0891b2;
+  transform: translateY(-2px);
+  box-shadow: 0 3px 6px rgba(8, 145, 178, 0.2);
+}
+
+.booking-container .slot-btn.selected {
+  border-color: #0891b2;
+  background: #d9f2f6;
+}
+
+.booking-container .confirm-btn {
+  width: 100%;
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border: none;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  background: #0891b2;
+  color: white;
+  transition: 0.25s;
+}
+
+.booking-container .confirm-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.booking-container .confirm-btn:hover:enabled {
+  background: #067a96;
+  box-shadow: 0 4px 10px rgba(8, 145, 178, 0.25);
+}
+
+.booking-container .confirmation-content {
+  text-align: center;
+}
+
+.booking-container .confirmation-content i {
+  font-size: 3rem;
+  color: #16a34a;
+}
+
+.booking-container .confirmation-content h1 {
+  font-size: 1.8rem;
+  margin: 1rem 0;
+  font-weight: 700;
+}
+
+.booking-container .confirmation-content .note {
+  margin-top: 1rem;
+  color: #555;
+  font-size: 0.95rem;
+}
+
+.booking-container .confirmation-content .details {
+  margin-top: 1.5rem;
+  text-align: left;
+  background: #f9fafb;
+  padding: 1rem;
+  border-radius: 0.75rem;
+}
+
+.booking-container .confirmation-content .details .row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+}
+
+.booking-container .confirmation-content .details .row i {
+  color: #0891b2;
+}
+
+.booking-container .confirmation-content .details .row span {
+  font-size: 0.95rem;
+}

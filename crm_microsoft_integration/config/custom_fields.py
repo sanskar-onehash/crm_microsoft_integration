@@ -67,7 +67,16 @@ EVENT_CUSTOM_FIELDS = [
     {
         "doctype": "Custom Field",
         "dt": "Event",
+        "label": "From Slot",
         "insert_after": "custom_outlook_organiser",
+        "fieldtype": "Link",
+        "options": "Outlook Event Slot",
+        "fieldname": "custom_outlook_from_slot",
+    },
+    {
+        "doctype": "Custom Field",
+        "dt": "Event",
+        "insert_after": "custom_outlook_from_slot",
         "fieldtype": "Column Break",
         "fieldname": "custom_column_break_outlook_2",
     },

@@ -1,0 +1,260 @@
+<html lang="{{boot.lang}}">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <meta name="generator" content="frappe" />
+
+    {% block meta_block %} {% include "templates/includes/meta_block.html" %} {%
+    endblock %}
+
+    <title>{% block title %}{{ title | striptags }}{% endblock %}</title>
+
+    <style>
+      {% include "templates/includes/event_slot.css" %}
+    </style>
+
+    {% if boot.lang == "eo" %}
+    <script type="text/javascript">
+      var _jipt = [];
+      _jipt.push(["project", "frappe"]);
+    </script>
+    <script
+      type="text/javascript"
+      src="https://cdn.crowdin.com/jipt/jipt.js"
+    ></script>
+    {% endif %}
+
+    <script>
+      window.frappe = {};
+      frappe.ready_events = [];
+      frappe.ready = function(fn) {
+      	frappe.ready_events.push(fn);
+      }
+      window.dev_server = {{ dev_server }};
+      window.socketio_port = {{ (frappe.socketio_port or 9000) }};
+      window.show_language_picker = {{ show_language_picker or 'false' }};
+    </script>
+  </head>
+
+  <body
+    frappe-session-status="{{ 'logged-in' if frappe.session.user != 'Guest' else 'logged-out'}}"
+  >
+    <div class="booking-container">
+      <div class="booking-card" id="bookingCard">
+        <div class="booking-header">
+          <div>
+            <h1 class="subject">{{ subject }}</h1>
+          </div>
+          <span
+            class="badge {{ 'confirmed' if status == 'Confirmed' else 'unconfirmed' }}"
+          >
+            {{ status }}
+          </span>
+        </div>
+
+        <div class="booking-content">
+          {% if description %}
+          <div class="description">{{ description | safe }}</div>
+          {% endif %} {# All-day event #} {% if all_day %}
+          <div class="badge outline">
+            <i class="icon-clock"></i> All-day event
+          </div>
+          {% endif %} {# Attendance Type Selection #} {% if event_location and
+          online_meet %}
+          <div class="attendance-options">
+            <h3>How would you like to attend?</h3>
+            <div class="attendance-grid">
+              <input
+                type="radio"
+                name="attendance"
+                value="in-person"
+                id="in-person"
+              />
+              <label for="in-person" class="attendance-card">
+                <i class="icon-map"></i>
+                <div>
+                  <p class="title">In person</p>
+                  <p class="subtitle">{{ event_location }}</p>
+                </div>
+              </label>
+
+              <input
+                type="radio"
+                name="attendance"
+                value="online"
+                id="online"
+              />
+              <label for="online" class="attendance-card">
+                <i class="icon-video"></i>
+                <div>
+                  <p class="title">Online</p>
+                  <p class="subtitle">Link will be emailed</p>
+                </div>
+              </label>
+            </div>
+          </div>
+          {% elif event_location and not online_meet %}
+          <div class="info-box">
+            <i class="icon-map"></i>
+            <div>
+              <p class="title">In-person meeting</p>
+              <p>{{ event_location }}</p>
+            </div>
+          </div>
+          {% elif online_meet and not event_location %}
+          <div class="info-box">
+            <i class="icon-video"></i>
+            <div>
+              <p class="title">Online meeting</p>
+              <p>Link will be sent via email once confirmed</p>
+            </div>
+          </div>
+          {% endif %} {# Repeat Event Info #} {% if repeat_event %}
+          <div class="repeat-info">
+            <i class="icon-repeat"></i>
+            <p id="repeatInfo"></p>
+          </div>
+          {% endif %} {# Slots #}
+          <div class="slots">
+            <h3>Available Slots</h3>
+            <div class="slot-grid">
+              {% for slot in slots %}
+              <button
+                class="slot-btn"
+                data-start="{{ slot.start }}"
+                data-end="{{ slot.end }}"
+                data-id="{{ slot.id }}"
+              >
+                <p class="slot-date"></p>
+                <p class="slot-time"></p>
+              </button>
+              {% endfor %}
+            </div>
+          </div>
+
+          <button id="confirmBooking" class="confirm-btn" disabled>
+            Select a slot to continue
+          </button>
+        </div>
+      </div>
+
+      <div class="confirmation-card hidden" id="confirmationCard">
+        <div class="confirmation-content">
+          <i class="icon-check"></i>
+          <h1>You're booked!</h1>
+          <p id="confirmedText"></p>
+          <div id="confirmedDetails"></div>
+          <div class="note">We've sent all details to your email.</div>
+        </div>
+      </div>
+    </div>
+
+    {% block base_scripts %}
+    <!-- js should be loaded in body! -->
+    <script>
+      frappe.boot = {{ boot | json }}
+      // for backward compatibility of some libs
+      frappe.sys_defaults = frappe.boot.sysdefaults;
+    </script>
+    {{ include_script('frappe-web.bundle.js') }} {% endblock %}
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const slotButtons = document.querySelectorAll(".slot-btn");
+        const confirmBtn = document.getElementById("confirmBooking");
+        const bookingCard = document.getElementById("bookingCard");
+        const confirmationCard = document.getElementById("confirmationCard");
+        const confirmedText = document.getElementById("confirmedText");
+        const confirmedDetails = document.getElementById("confirmedDetails");
+        const repeatInfoEl = document.getElementById("repeatInfo");
+
+        let selectedSlot = null;
+        let attendanceType = null;
+
+        // Format slots
+        slotButtons.forEach((btn) => {
+          const start = new Date(btn.dataset.start);
+          const end = new Date(btn.dataset.end);
+          btn.querySelector(".slot-date").textContent =
+            start.toLocaleDateString("en-US", {
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            });
+          btn.querySelector(".slot-time").textContent =
+            `${start.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} - ${end.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
+
+          btn.addEventListener("click", () => {
+            slotButtons.forEach((b) => b.classList.remove("selected"));
+            btn.classList.add("selected");
+            selectedSlot = { start, end, id: btn.dataset.id };
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = "Confirm Booking";
+          });
+        });
+
+        // Attendance type
+        document
+          .querySelectorAll("input[name='attendance']")
+          .forEach((radio) => {
+            radio.addEventListener("change", (e) => {
+              attendanceType = e.target.value;
+            });
+          });
+
+        // Repeat info
+        if (repeatInfoEl) {
+          const weekDays = JSON.parse(`{{ week_days|tojson }}`);
+          const repeatOn = "{{ repeat_on }}";
+          const repeatTill = "{{ repeat_till }}";
+
+          const days = weekDays
+            .map((d, i) =>
+              d
+                ? [
+                    "Sunday",
+                    "Monday",
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday",
+                    "Friday",
+                    "Saturday",
+                  ][i]
+                : null,
+            )
+            .filter(Boolean);
+          repeatInfoEl.textContent = `Repeats ${repeatOn} ${repeatOn === "Weekly" ? "on " + days.join(", ") : ""} ${repeatTill ? ` until ${new Date(repeatTill).toLocaleDateString()}` : ""}`;
+        }
+
+        // Confirm booking
+        confirmBtn.addEventListener("click", () => {
+          if (!selectedSlot) return;
+          frappe.call({
+            method:
+              "crm_microsoft_integration.microsoft.doctype.outlook_event_slot.outlook_event_slot.confirm_slot",
+            args: {
+              slot_id: selectedSlot.id,
+              mode_online: attendanceType === "online",
+            },
+            callback: (res) => {
+              bookingCard.classList.add("hidden");
+              confirmationCard.classList.remove("hidden");
+
+              confirmedText.textContent = "Your slot is confirmed.";
+              confirmedDetails.innerHTML = `
+          <p><strong>Date:</strong> ${selectedSlot.start.toLocaleDateString()}</p>
+          <p><strong>Time:</strong> ${selectedSlot.start.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} - ${selectedSlot.end.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</p>
+          `;
+            },
+          });
+        });
+      });
+    </script>
+    <!-- csrf_token -->
+    {%- block body_include %}{{ body_include or "" }}{% endblock -%}
+  </body>
+</html>
