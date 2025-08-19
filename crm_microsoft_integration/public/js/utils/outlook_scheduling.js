@@ -102,7 +102,7 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
           args: {
             group_name: group_value,
           },
-          callback: function (res) {
+          callback: async function (res) {
             if (!res.exc) {
               const group_users = res.message;
               const updated_value = me.slot_dialog.get_value("users");
@@ -112,6 +112,11 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
 
               for (let group_user of group_users) {
                 if (!old_users.includes(group_user)) {
+                  frappe.utils.get_link_title("Microsoft User", group_user) ||
+                    (await frappe.utils.fetch_link_title(
+                      "Microsoft User",
+                      group_user,
+                    ));
                   updated_value.push({ microsoft_user: group_user });
                 }
               }
