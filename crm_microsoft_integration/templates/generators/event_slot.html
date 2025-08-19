@@ -11,6 +11,10 @@
     endblock %}
 
     <title>{% block title %}{{ title | striptags }}{% endblock %}</title>
+    <link
+      rel="stylesheet"
+      href="/assets/frappe/css/fonts/fontawesome/font-awesome.min.css"
+    />
 
     <style>
       {% include "templates/includes/event_slot.css" %}
@@ -43,16 +47,12 @@
     frappe-session-status="{{ 'logged-in' if frappe.session.user != 'Guest' else 'logged-out'}}"
   >
     <div class="booking-container">
+      {% if status != "Confirmed" %}
       <div class="booking-card" id="bookingCard">
         <div class="booking-header">
           <div>
             <h1 class="subject">{{ subject }}</h1>
           </div>
-          <span
-            class="badge {{ 'confirmed' if status == 'Confirmed' else 'unconfirmed' }}"
-          >
-            {{ status }}
-          </span>
         </div>
 
         <div class="booking-content">
@@ -60,10 +60,10 @@
           <div class="description">{{ description | safe }}</div>
           {% endif %} {# All-day event #} {% if all_day %}
           <div class="badge outline">
-            <i class="icon-clock"></i> All-day event
+            <i class="fa fa-clock-o"></i> All-day event
           </div>
           {% endif %} {# Attendance Type Selection #} {% if event_location and
-          online_meet %}
+          add_teams_meet %}
           <div class="attendance-options">
             <h3>How would you like to attend?</h3>
             <div class="attendance-grid">
@@ -74,7 +74,7 @@
                 id="in-person"
               />
               <label for="in-person" class="attendance-card">
-                <i class="icon-map"></i>
+                <i class="fa fa-map-pin"></i>
                 <div>
                   <p class="title">In person</p>
                   <p class="subtitle">{{ event_location }}</p>
@@ -88,7 +88,7 @@
                 id="online"
               />
               <label for="online" class="attendance-card">
-                <i class="icon-video"></i>
+                <i class="fa fa-globe"></i>
                 <div>
                   <p class="title">Online</p>
                   <p class="subtitle">Link will be emailed</p>
@@ -96,32 +96,32 @@
               </label>
             </div>
           </div>
-          {% elif event_location and not online_meet %}
-          <div class="info-box">
-            <i class="icon-map"></i>
+          {% elif event_location and not add_teams_meet %}
+          <div class="info-box attendance-card">
+            <i class="fa fa-map-pin"></i>
             <div>
               <p class="title">In-person meeting</p>
-              <p>{{ event_location }}</p>
+              <p class="subtitle">{{ event_location }}</p>
             </div>
           </div>
-          {% elif online_meet and not event_location %}
-          <div class="info-box">
-            <i class="icon-video"></i>
+          {% elif add_teams_meet and not event_location %}
+          <div class="info-box attendance-card">
+            <i class="fa fa-globe"></i>
             <div>
               <p class="title">Online meeting</p>
-              <p>Link will be sent via email once confirmed</p>
+              <p class="subtitle">Link will be sent via email once confirmed</p>
             </div>
           </div>
-          {% endif %} {# Repeat Event Info #} {% if repeat_event %}
+          {% endif %} {# Repeat Event Info #} {% if repeat_this_event %}
           <div class="repeat-info">
-            <i class="icon-repeat"></i>
-            <p id="repeatInfo"></p>
+            <i class="fa-solid fa-repeat"></i>
+            <div id="repeatInfo"></div>
           </div>
           {% endif %} {# Slots #}
           <div class="slots">
             <h3>Available Slots</h3>
             <div class="slot-grid">
-              {% for slot in slots %}
+              {% for slot in slots or [] %}
               <button
                 class="slot-btn"
                 data-start="{{ slot.start }}"
@@ -140,14 +140,50 @@
           </button>
         </div>
       </div>
-
-      <div class="confirmation-card hidden" id="confirmationCard">
+      {% endif %}
+      <div
+        class="confirmation-card {{ 'hidden' if status != 'Confirmed' else ''}}"
+        id="confirmationCard"
+      >
         <div class="confirmation-content">
-          <i class="icon-check"></i>
-          <h1>You're booked!</h1>
-          <p id="confirmedText"></p>
-          <div id="confirmedDetails"></div>
-          <div class="note">We've sent all details to your email.</div>
+          <div class="success-icon">
+            <i class="fa fa-solid fa-calendar-check-o"></i>
+          </div>
+
+          <h1 class="success-title">You're booked!</h1>
+          <p class="success-subtitle">Your meeting has been confirmed 🎉</p>
+
+          <div class="details-card">
+            <h3 class="event-title">{{ subject }}</h3>
+            <div class="event-description">{{ description }}</div>
+            <div class="row">
+              <i class="fa fa-clock-o"></i>
+              <span><strong>From:</strong> {{ selected_slot_start }}</span>
+            </div>
+            <div class="row">
+              <i class="fa fa-clock-o"></i>
+              <span><strong>To:</strong> {{ selected_slot_end }}</span>
+            </div>
+
+            {% if selected_online and add_teams_meet %}
+            <div class="row">
+              <i class="fa fa-video-camera"></i>
+              <span><strong>Online:</strong> Link sent via email</span>
+            </div>
+            {% elif not selected_online and event_location %}
+            <div class="row">
+              <i class="fa fa-map-o"></i>
+              <span><strong>Location:</strong> {{ event_location }}</span>
+            </div>
+            {% endif %} {% if repeat_this_event %}
+            <div class="repeat-info">
+              <i class="fa-solid fa-repeat"></i>
+              <div id="repeatInfo"></div>
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="note">All details have been emailed to you.</div>
         </div>
       </div>
     </div>
@@ -162,97 +198,98 @@
     {{ include_script('frappe-web.bundle.js') }} {% endblock %}
 
     <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        const slotButtons = document.querySelectorAll(".slot-btn");
-        const confirmBtn = document.getElementById("confirmBooking");
-        const bookingCard = document.getElementById("bookingCard");
-        const confirmationCard = document.getElementById("confirmationCard");
-        const confirmedText = document.getElementById("confirmedText");
-        const confirmedDetails = document.getElementById("confirmedDetails");
-        const repeatInfoEl = document.getElementById("repeatInfo");
+        document.addEventListener("DOMContentLoaded", () => {
+          const slotButtons = document.querySelectorAll(".slot-btn");
+          const confirmBtn = document.getElementById("confirmBooking");
+          const bookingCard = document.getElementById("bookingCard");
+          const confirmationCard = document.getElementById("confirmationCard");
+          const confirmedText = document.getElementById("confirmedText");
+          const repeatInfoEl = document.getElementById("repeatInfo");
+          const selectedStart = document.getElementById("selectedStart");
+          const selectedEnd = document.getElementById("selectedEnd");
 
-        let selectedSlot = null;
-        let attendanceType = null;
+          let selectedSlot = null;
+      let attendanceType = "{{ "" if event_location and add_teams_meet else "in-person" if event_location else "online"}}";
 
-        // Format slots
-        slotButtons.forEach((btn) => {
-          const start = new Date(btn.dataset.start);
-          const end = new Date(btn.dataset.end);
-          btn.querySelector(".slot-date").textContent =
-            start.toLocaleDateString("en-US", {
-              weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
+      function enableSubmit() {
+      	confirmBtn.disabled = true;
+      	if (attendanceType && selectedSlot) {
+      		confirmBtn.disabled = false;
+      		confirmBtn.textContent = "Confirm Booking";
+      	} else if (attendanceType) {
+      		confirmBtn.textContent = "Select a slot to continue";
+      	} else {
+      		confirmBtn.textContent = "Select a meeting mode to continue";
+      	}
+      }
+
+          // Format slots
+          slotButtons.forEach((btn) => {
+            const start = new Date(btn.dataset.start);
+            const end = new Date(btn.dataset.end);
+            btn.querySelector(".slot-date").textContent =
+              start.toLocaleDateString("en-US", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              });
+            btn.querySelector(".slot-time").textContent =
+              `${start.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} - ${end.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
+
+            btn.addEventListener("click", () => {
+              slotButtons.forEach((b) => b.classList.remove("selected"));
+              btn.classList.add("selected");
+              selectedSlot = { start, end, id: btn.dataset.id };
+      		enableSubmit();
             });
-          btn.querySelector(".slot-time").textContent =
-            `${start.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} - ${end.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
+          });
 
-          btn.addEventListener("click", () => {
-            slotButtons.forEach((b) => b.classList.remove("selected"));
-            btn.classList.add("selected");
-            selectedSlot = { start, end, id: btn.dataset.id };
-            confirmBtn.disabled = false;
-            confirmBtn.textContent = "Confirm Booking";
+          // Attendance type
+          document
+            .querySelectorAll("input[name='attendance']")
+            .forEach((radio) => {
+              radio.addEventListener("change", (e) => {
+
+                attendanceType = e.target.value;
+      			enableSubmit();
+              });
+            });
+
+          // Repeat info
+          if (repeatInfoEl) {
+            const weekDays = {{ week_days or [] }};
+            const repeatOn = "{{ repeat_on }}";
+            const repeatTill = "{{ repeat_till or "" }}";
+
+      	repeatInfoEl.innerHTML = `<p>Repeats ${repeatOn} ${repeatOn === "Weekly" ? "on <span class='capitalize'>" + weekDays.join(", ") + "</span>": ""} ${repeatTill ? ` until ${new Date(repeatTill).toLocaleDateString()}` : ""}</p>`;
+          }
+
+          // Confirm booking
+          confirmBtn && confirmBtn.addEventListener("click", () => {
+            if (!selectedSlot) return;
+            confirmBtn.disabled = true;
+
+            frappe.call({
+              method:
+                "crm_microsoft_integration.microsoft.doctype.outlook_event_slot.outlook_event_slot.confirm_slot",
+              args: {
+                slot_id: selectedSlot.id,
+                mode_online: attendanceType === "online",
+              },
+              callback: (res) => {
+                if (!res.exc) {
+                  bookingCard.classList.add("hidden");
+                  confirmationCard.classList.remove("hidden");
+
+                  selectedStart.textContent =
+                    selectedSlot.start.toLocaleDateString();
+                  selectedEnd.textContent = selectedSlot.end.toLocaleDateString();
+                }
+              },
+            });
           });
         });
-
-        // Attendance type
-        document
-          .querySelectorAll("input[name='attendance']")
-          .forEach((radio) => {
-            radio.addEventListener("change", (e) => {
-              attendanceType = e.target.value;
-            });
-          });
-
-        // Repeat info
-        if (repeatInfoEl) {
-          const weekDays = JSON.parse(`{{ week_days|tojson }}`);
-          const repeatOn = "{{ repeat_on }}";
-          const repeatTill = "{{ repeat_till }}";
-
-          const days = weekDays
-            .map((d, i) =>
-              d
-                ? [
-                    "Sunday",
-                    "Monday",
-                    "Tuesday",
-                    "Wednesday",
-                    "Thursday",
-                    "Friday",
-                    "Saturday",
-                  ][i]
-                : null,
-            )
-            .filter(Boolean);
-          repeatInfoEl.textContent = `Repeats ${repeatOn} ${repeatOn === "Weekly" ? "on " + days.join(", ") : ""} ${repeatTill ? ` until ${new Date(repeatTill).toLocaleDateString()}` : ""}`;
-        }
-
-        // Confirm booking
-        confirmBtn.addEventListener("click", () => {
-          if (!selectedSlot) return;
-          frappe.call({
-            method:
-              "crm_microsoft_integration.microsoft.doctype.outlook_event_slot.outlook_event_slot.confirm_slot",
-            args: {
-              slot_id: selectedSlot.id,
-              mode_online: attendanceType === "online",
-            },
-            callback: (res) => {
-              bookingCard.classList.add("hidden");
-              confirmationCard.classList.remove("hidden");
-
-              confirmedText.textContent = "Your slot is confirmed.";
-              confirmedDetails.innerHTML = `
-          <p><strong>Date:</strong> ${selectedSlot.start.toLocaleDateString()}</p>
-          <p><strong>Time:</strong> ${selectedSlot.start.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} - ${selectedSlot.end.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</p>
-          `;
-            },
-          });
-        });
-      });
     </script>
     <!-- csrf_token -->
     {%- block body_include %}{{ body_include or "" }}{% endblock -%}

@@ -14,6 +14,15 @@ body {
   min-height: 100dvh;
 }
 
+.fa-calendar-check-o {
+  position: relative;
+  left: 2px;
+}
+
+.capitalize {
+  text-transform: capitalize;
+}
+
 .booking-container {
   width: 100%;
   max-width: 720px;
@@ -116,8 +125,11 @@ body {
   border: 2px solid #e5e7eb;
   border-radius: 0.75rem;
   background: #fff;
-  cursor: pointer;
   transition: all 0.25s ease;
+}
+
+.booking-container label.attendance-card {
+  cursor: pointer;
   user-select: none;
 }
 
@@ -137,10 +149,10 @@ body {
 .booking-container .attendance-card .subtitle {
   font-size: 0.9rem;
   color: #555;
-  margin-top: 0.2rem;
+  margin-top: 0.4rem;
 }
 
-.booking-container .attendance-card:hover {
+.booking-container label.attendance-card:hover {
   border-color: #0891b2;
   box-shadow: 0 3px 8px rgba(8, 145, 178, 0.15);
   transform: translateY(-2px);
@@ -150,7 +162,7 @@ body {
 .booking-container
   .attendance-grid
   input[type="radio"]:checked
-  + .attendance-card {
+  + label.attendance-card {
   border-color: #0891b2;
   background: #d9f2f6;
   box-shadow: 0 3px 10px rgba(8, 145, 178, 0.25);
@@ -274,46 +286,117 @@ body {
   box-shadow: 0 4px 10px rgba(8, 145, 178, 0.25);
 }
 
-.booking-container .confirmation-content {
+/* Success state styling */
+.confirmation-content {
   text-align: center;
+  padding: 2rem 1.5rem;
+  animation: fadeInUp 0.6s ease;
 }
 
-.booking-container .confirmation-content i {
-  font-size: 3rem;
+.success-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: #ecfdf5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
+  animation: popIn 0.5s ease;
+}
+
+.success-icon i {
+  font-size: 2.5rem;
   color: #16a34a;
 }
 
-.booking-container .confirmation-content h1 {
+.success-title {
   font-size: 1.8rem;
-  margin: 1rem 0;
   font-weight: 700;
-}
-
-.booking-container .confirmation-content .note {
   margin-top: 1rem;
+  color: #111;
+}
+
+.success-subtitle {
+  font-size: 1rem;
   color: #555;
-  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
 }
 
-.booking-container .confirmation-content .details {
-  margin-top: 1.5rem;
-  text-align: left;
+.details-card {
   background: #f9fafb;
-  padding: 1rem;
-  border-radius: 0.75rem;
+  border-radius: 1rem;
+  padding: 1.2rem;
+  text-align: left;
+  margin-top: 1rem;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
 }
 
-.booking-container .confirmation-content .details .row {
+.details-card .event-title {
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #0891b2;
+}
+.details-card .event-description {
+  margin-bottom: 2rem;
+}
+
+.details-card .row {
   display: flex;
   align-items: center;
   gap: 0.6rem;
   margin-bottom: 0.6rem;
+  font-size: 0.95rem;
+  color: #333;
 }
 
-.booking-container .confirmation-content .details .row i {
+.details-card .row i {
   color: #0891b2;
 }
 
-.booking-container .confirmation-content .details .row span {
+.note {
+  margin-top: 1rem;
   font-size: 0.95rem;
+  color: #444;
+}
+
+.calendar-btn {
+  margin-top: 1.5rem;
+  background: #0891b2;
+  color: white;
+  font-weight: 600;
+  border: none;
+  padding: 0.9rem 1.4rem;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.calendar-btn:hover {
+  background: #067a96;
+  box-shadow: 0 4px 12px rgba(8, 145, 178, 0.25);
+}
+
+/* Animations */
+@keyframes popIn {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

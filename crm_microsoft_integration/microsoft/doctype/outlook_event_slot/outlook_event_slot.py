@@ -26,26 +26,21 @@ class OutlookEventSlot(WebsiteGenerator):
 
         context.update(
             {
-                "subject": self.subject,
-                "description": self.description,
-                "status": self.status or "Unconfirmed",
-                "color": self.color,
-                "event_location": self.event_location,
-                "online_meet": self.add_teams_meet,
-                "all_day": self.all_day,
-                "slots": [
-                    {"start": slot.starts_on, "end": slot.ends_on, "id": slot.name}
-                    for slot in self.slot_proposals
-                ],
-                "repeat_event": self.repeat_this_event,
-                "repeat_on": self.repeat_on,
-                "repeat_till": self.repeat_till,
                 "week_days": [
-                    week_field if self.get(week_field) else None
-                    for week_field in WEEK_FIELDS
+                    week_field for week_field in WEEK_FIELDS if self.get(week_field)
                 ],
             }
         )
+
+        if self.status != "Confirmed":
+            context.update(
+                {
+                    "slots": [
+                        {"start": slot.starts_on, "end": slot.ends_on, "id": slot.name}
+                        for slot in self.slot_proposals
+                    ],
+                }
+            )
 
     def after_insert(self):
         self.db_set(
@@ -56,6 +51,12 @@ class OutlookEventSlot(WebsiteGenerator):
         )
 
     def confirm(self, slot_id, online=True, ignore_permissions=False):
+        if self.selected_slot_start:
+            frappe.throw("Event is already scheduled.")
+
+        if online and not self.add_teams_meet:
+            frappe.throw("Can not select online mode.")
+
         starts_on = None
         ends_on = None
 
@@ -80,8 +81,8 @@ class OutlookEventSlot(WebsiteGenerator):
                 "repeat_this_event": self.repeat_this_event,
                 "all_day": self.all_day,
                 "custom_sync_with_ms_calendar": True,
-                "custom_add_teams_meet": self.add_teams_meet and online,
-                "custom_outlook_location": self.event_location,
+                "custom_add_teams_meet": online,
+                "custom_outlook_location": not online and self.event_location,
                 "custom_outlook_calendar": self.outlook_calendar,
                 "custom_outlook_organiser": self.organiser,
                 "repeat_on": self.repeat_on,
@@ -120,8 +121,15 @@ class OutlookEventSlot(WebsiteGenerator):
             )
 
         event_doc.save(ignore_permissions=ignore_permissions)
-        self.set("status", "Confirmed")
-        self.save()
+        self.update(
+            {
+                "status": "Confirmed",
+                "selected_online": online,
+                "selected_slot_start": starts_on,
+                "selected_slot_end": ends_on,
+            }
+        )
+        self.submit()
 
 
 @frappe.whitelist()

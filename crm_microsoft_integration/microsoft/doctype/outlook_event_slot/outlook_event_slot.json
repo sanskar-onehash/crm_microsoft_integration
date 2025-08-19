@@ -8,6 +8,9 @@
  "field_order": [
   "subject",
   "description",
+  "selected_online",
+  "selected_slot_start",
+  "selected_slot_end",
   "column_break_eqyy",
   "status",
   "outlook_calendar",
@@ -36,7 +39,8 @@
   "thursday",
   "friday",
   "saturday",
-  "sunday"
+  "sunday",
+  "amended_from"
  ],
  "fields": [
   {
@@ -228,11 +232,41 @@
   {
    "fieldname": "column_break_qeay",
    "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "selected_online",
+   "fieldtype": "Check",
+   "label": "Selected Online",
+   "read_only": 1
+  },
+  {
+   "fieldname": "selected_slot_start",
+   "fieldtype": "Datetime",
+   "label": "Selected Slot Start",
+   "read_only": 1
+  },
+  {
+   "fieldname": "selected_slot_end",
+   "fieldtype": "Datetime",
+   "label": "Selected Slot End",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Outlook Event Slot",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
   }
  ],
  "index_web_pages_for_search": 1,
+ "is_submittable": 1,
  "links": [],
- "modified": "2025-08-19 12:52:57.501915",
+ "modified": "2025-08-19 23:37:50.543408",
  "modified_by": "Administrator",
  "module": "Microsoft",
  "name": "Outlook Event Slot",
