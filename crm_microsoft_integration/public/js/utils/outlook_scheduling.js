@@ -40,33 +40,41 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
       },
       callback: (r) => {
         if (!r.exc) {
+          me.events = r.message;
           const activities_html = frappe.render_template("outlook_scheduling", {
             events: r.message,
           });
 
           $(activities_html).appendTo(me.scheduled_events_wrapper);
-
-          $(".scheduled-events")
-            .find(".completion-checkbox")
-            .on("click", function () {
-              me.update_status(this, "Event");
-            });
-
-          me.schedule_event();
+          me.setup_listeners();
         }
       },
     });
   }
 
+  setup_listeners() {
+    const me = this;
+    me.scheduled_events_wrapper.click(function (e) {
+      if (e.target.closest(".schedule-btn")) {
+        me.schedule_event();
+      } else if (e.target.closest(".reschedule-btn")) {
+        const event_idx = me.reschedule_event(e.target.dataset.eventIdx);
+        reschedule_event(event_idx);
+      }
+    });
+  }
+
+  reschedule_event(event_idx) {
+    this.load_lib().then(async () => {
+      //TODO: Implement rescheduling flow
+    });
+  }
+
   schedule_event() {
-    let me = this;
-    let _schedule_event = () => {
-      me.load_lib().then(async () => {
-        me.slot_dialog = await me.get_slot_dialog(me.default_data);
-        me.slot_dialog.show();
-      });
-    };
-    $(".schedule-btn").click(_schedule_event);
+    this.load_lib().then(async () => {
+      this.slot_dialog = await this.get_slot_dialog(this.default_data);
+      this.slot_dialog.show();
+    });
   }
 
   add_slot_handler() {
@@ -79,6 +87,41 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
         ),
       );
       me.calendar_dialog.show();
+    };
+  }
+
+  handle_group_change() {
+    const me = this;
+    return function () {
+      const group_value = me.slot_dialog.get_value("user_group");
+
+      if (group_value) {
+        frappe.call({
+          method:
+            "crm_microsoft_integration.microsoft.doctype.microsoft_group.microsoft_group.get_group_users",
+          args: {
+            group_name: group_value,
+          },
+          callback: function (res) {
+            if (!res.exc) {
+              const group_users = res.message;
+              const updated_value = me.slot_dialog.get_value("users");
+              const old_users = updated_value.map(
+                (user) => user.microsoft_user,
+              );
+
+              for (let group_user of group_users) {
+                if (!old_users.includes(group_user)) {
+                  updated_value.push({ microsoft_user: group_user });
+                }
+              }
+
+              me.slot_dialog.set_value("users", updated_value);
+              me.slot_dialog.set_value("user_group", "");
+            }
+          },
+        });
+      }
     };
   }
 
@@ -123,9 +166,13 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
         reqd: 1,
       },
       {
-        label: "Color",
-        fieldtype: "Color",
-        fieldname: "color",
+        fieldname: "description",
+        fieldtype: "Text Editor",
+        label: "Description",
+      },
+      {
+        fieldtype: "Column Break",
+        fieldname: "culumn_break_1",
       },
       {
         label: "Outlook Calendar",
@@ -140,10 +187,6 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
         fieldname: "organiser",
         options: "Microsoft User",
         reqd: 1,
-      },
-      {
-        fieldtype: "Column Break",
-        fieldname: "culumn_break_1",
       },
       {
         default: "0",
@@ -190,6 +233,36 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
       {
         fieldname: "section_break_2",
         fieldtype: "Section Break",
+      },
+      {
+        fieldname: "user_group",
+        fieldtype: "Link",
+        label: "User Group",
+        options: "Microsoft Group",
+        onchange: this.handle_group_change(),
+      },
+      {
+        fieldname: "users",
+        fieldtype: "Table MultiSelect",
+        label: "Users",
+        options: "Microsoft Users",
+      },
+      {
+        fieldname: "section_break_3",
+        fieldtype: "Section Break",
+      },
+      {
+        fieldname: "event_participants",
+        fieldtype: "Table",
+        label: "Event Participants",
+        options: "Event Participants",
+        fields: await this.get_docfields("Event Participants"),
+        reqd: 1,
+      },
+      {
+        fieldtype: "Section Break",
+        fieldname: "section_break_4",
+        label: "Participants",
       },
       {
         depends_on: "repeat_this_event",
@@ -257,28 +330,6 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
         fieldname: "sunday",
         fieldtype: "Check",
         label: "Sunday",
-      },
-      {
-        fieldname: "section_break_3",
-        fieldtype: "Section Break",
-      },
-      {
-        fieldname: "description",
-        fieldtype: "Text Editor",
-        label: "Description",
-      },
-      {
-        fieldtype: "Section Break",
-        fieldname: "section_break_4",
-        label: "Participants",
-      },
-      {
-        fieldname: "event_participants",
-        fieldtype: "Table",
-        label: "Event Participants",
-        options: "Event Participants",
-        fields: await this.get_docfields("Event Participants"),
-        reqd: 1,
       },
     ];
     for (let field of fields) {

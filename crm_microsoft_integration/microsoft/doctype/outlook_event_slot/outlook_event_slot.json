@@ -6,17 +6,23 @@
  "engine": "InnoDB",
  "field_order": [
   "subject",
-  "color",
-  "outlook_calendar",
-  "organiser",
+  "description",
   "column_break_eqyy",
   "status",
-  "add_teams_meet",
+  "outlook_calendar",
+  "organiser",
+  "color",
   "event_location",
+  "add_teams_meet",
   "all_day",
   "repeat_this_event",
   "section_break_xghr",
   "slot_proposals",
+  "section_break_iwjy",
+  "user_group",
+  "users",
+  "participants_section",
+  "event_participants",
   "section_break_htuv",
   "repeat_on",
   "repeat_till",
@@ -27,11 +33,7 @@
   "thursday",
   "friday",
   "saturday",
-  "sunday",
-  "section_break_iwjy",
-  "description",
-  "participants_section",
-  "event_participants"
+  "sunday"
  ],
  "fields": [
   {
@@ -79,7 +81,6 @@
    "label": "Add Teams Meet"
   },
   {
-   "depends_on": "eval: !doc.add_teams_meet",
    "fieldname": "event_location",
    "fieldtype": "Small Text",
    "label": "Event Location"
@@ -198,11 +199,23 @@
    "label": "Slot Proposals",
    "options": "Outlook Slot Proposals",
    "reqd": 1
+  },
+  {
+   "fieldname": "user_group",
+   "fieldtype": "Link",
+   "label": "User Group",
+   "options": "Microsoft Group"
+  },
+  {
+   "fieldname": "users",
+   "fieldtype": "Table MultiSelect",
+   "label": "Users",
+   "options": "Microsoft Users"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-08-18 08:20:36.033038",
+ "modified": "2025-08-18 14:41:59.736738",
  "modified_by": "Administrator",
  "module": "Microsoft",
  "name": "Outlook Event Slot",

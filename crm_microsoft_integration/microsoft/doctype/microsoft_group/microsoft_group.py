@@ -15,6 +15,20 @@ class MicrosoftGroup(Document):
 
 
 @frappe.whitelist()
+def get_group_users(group_name):
+    users = frappe.db.get_all(
+        "Microsoft Groups",
+        ["parent"],
+        {
+            "microsoft_group": group_name,
+            "parenttype": "Microsoft User",
+            "parentfield": "groups",
+        },
+    )
+    return [user.parent for user in users]
+
+
+@frappe.whitelist()
 def sync_ms_groups():
     frappe.enqueue(
         _sync_ms_groups,

@@ -1,124 +1,163 @@
 <div class="outlook-scheduling">
-	<div class="new-btn pb-3">
-		<span>
-			<button class="btn btn-sm small schedule-btn">
-				<svg class="icon icon-sm">
-					<use href="#icon-calendar"></use>
-				</svg>
-				{{ __("Schedule") }}
-			</button>
-		</span>
-	</div>
-	<div class="section-body">
-		<div class="scheduled-events pl-1">
-			<div class="open-section-head">
-				<span class="ml-2">{{ __("Open Events") }}</span>
-			</div>
-			{% if (events.length) { %}
-                {% let icon_set = {"Sent/Received Email": "mail", "Call": "call", "Meeting": "share-people"}; %}
-                {% for(var i=0, l=events.length; i<l; i++) { %}
-                    <div class="single-activity">
-                        <div class="flex justify-between mb-2">
-                            <div class="row label-area font-md ml-1 title">
-                                <span class="mr-2">
-                                    <svg class="icon icon-sm">
-                                        <use href="#icon-{{ icon_set[events[i].event_category] || 'calendar' }}"></use>
-                                    </svg>
-                                </span>
-                                <a href="/app/event/{{ events[i].name }}" title="{{ __('Open Event') }}">
-                                    {%= events[i].subject %}
-                                </a>
-                            </div>
-                            <div class="checkbox">
-                                <input type="checkbox" class="completion-checkbox"
-                                    name="{{ events[i].name }}" title="{{ __('Mark As Closed') }}">
-                            </div>
-                        </div>
-                        <div class="text-muted ml-1">
-                            {%= frappe.datetime.global_date_format(events[i].starts_on) %}
-
-                            {% if (events[i].ends_on) { %}
-                                {% if (frappe.datetime.obj_to_user(events[i].starts_on) != frappe.datetime.obj_to_user(events[i].ends_on)) %}
-                                    -
-                                    {%= frappe.datetime.global_date_format(frappe.datetime.obj_to_user(events[i].ends_on)) %}
-                                    {%= frappe.datetime.get_time(events[i].ends_on) %}
-                                {% } else if (events[i].ends_on) { %}
-                                    -
-                                    {%= frappe.datetime.get_time(events[i].ends_on) %}
-                                {% } %}
-                            {% } %}
-
-                        </div>
-                    </div>
-                {% } %}
-            {% } else { %}
-            <div class="single-activity no-activity text-muted">
-                {{ __("No sheduled activity") }}
+  <div class="new-btn pb-3">
+    <span>
+      <button class="btn btn-sm small btn-primary schedule-btn">
+        <svg class="icon icon-sm">
+          <use href="#icon-calendar"></use>
+        </svg>
+        {{ __("Schedule") }}
+      </button>
+    </span>
+  </div>
+  <div class="section-body">
+    <div class="scheduled-events pl-1">
+      <div class="open-section-head">
+        <span class="ml-2">{{ __("Open Events") }}</span>
+      </div>
+      {% if (events.length) { %} {% let icon_set = {"Sent/Received Email":
+      "mail", "Call": "call", "Meeting": "share-people"}; %} {% for (var i = 0;
+      i < events.length; i++) { %}
+      <div class="single-activity border rounded p-4 mb-3 shadow-sm bg-white">
+        <!-- Header Row: Icon, Subject, Type -->
+        <div class="flex justify-between items-start mb-2">
+          <div class="flex items-center title font-md">
+            <span class="mr-2">
+              <svg class="icon icon-sm">
+                <use
+                  href="#icon-{{ icon_set[events[i].event_category] || 'calendar' }}"
+                ></use>
+              </svg>
+            </span>
+            <div>
+              <a
+                href="/app/event/{{ events[i].name }}"
+                class="text-primary font-semibold"
+                title="{{ __('Open Event') }}"
+              >
+                {%= events[i].subject %}
+              </a>
+              <div class="text-xs text-muted mt-1">{%= events[i].type %}</div>
             </div>
-		    {% } %}
-		</div>
-	</div>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex items-center space-x-2">
+            {% if (i == 0) { %}
+            <button
+              class="btn btn-sm btn-warning reschedule-btn"
+              data-event="{{ events[i].name }}"
+              data-event-idx="{{ i }}"
+            >
+              {{ __("Reschedule") }}
+            </button>
+            {% } %}
+            <!-- <input type="checkbox" class="completion-checkbox" -->
+            <!--     name="{{ events[i].name }}" title="{{ __('Mark As Closed') }}"> -->
+          </div>
+        </div>
+
+        <!-- Meeting Mode Indicator -->
+        <div class="text-xs text-muted mb-2 ml-1">
+          {% let modes = []; %} {% if (events[i].add_teams_meet) { %} {%
+          modes.push("Online"); %} {% } %} {% if (events[i].event_location) { %}
+          {% modes.push("Offline"); %} {% } %} {% if (modes.length) { %}
+          <span class="badge bg-light border px-2 py-1 rounded text-muted">
+            {{ modes.join(" & ") }}
+          </span>
+          {% } %}
+        </div>
+
+        <!-- Time Slots -->
+        <div class="ml-1 text-muted text-sm mb-2">
+          {% if (events[i].time_slots && events[i].time_slots.length) { %}
+          <ul class="list-disc pl-4">
+            {% for (var j = 0; j < events[i].time_slots.length; j++) { %}
+            <li>
+              {%=
+              frappe.datetime.global_date_format(events[i].time_slots[j].starts_on)
+              %} {%= frappe.datetime.get_time(events[i].time_slots[j].starts_on)
+              %} - {%= frappe.datetime.get_time(events[i].time_slots[j].ends_on)
+              %}
+            </li>
+            {% } %}
+          </ul>
+          {% } %}
+        </div>
+
+        <!-- Description -->
+        {% if (events[i].description) { %}
+        <div class="ql-editor read-mode text-sm mt-2">
+          {{ events[i].description }}
+        </div>
+        {% } %}
+      </div>
+      {% } %} {% } else { %}
+      <div class="single-activity no-activity text-muted">
+        {{ __("No scheduled activity") }}
+      </div>
+      {% } %}
+    </div>
+  </div>
 </div>
 
-
 <style>
-.custom_wrapper {
-	width: 100%;
-}
+  .custom_wrapper {
+    width: 100%;
+  }
 
-.scheduled-events {
-	width: 100%;
-}
+  .scheduled-events {
+    width: 100%;
+  }
 
-.outlook-scheduling {
-	min-height: 50px;
-	padding-left: 0px;
-	padding-bottom: 15px !important;
-}
+  .outlook-scheduling {
+    min-height: 50px;
+    padding-left: 0px;
+    padding-bottom: 15px !important;
+  }
 
-.outlook-scheduling .new-btn {
-	text-align: right;
-}
+  .outlook-scheduling .new-btn {
+    text-align: right;
+  }
 
-.single-activity {
-	min-height: 90px;
-	border: 1px solid var(--border-color);
-	padding: 10px;
-	border-bottom: 0;
-	padding-right: 0;
-}
+  .single-activity {
+    min-height: 90px;
+    border: 1px solid var(--border-color);
+    padding: 10px;
+    border-bottom: 0;
+    padding-right: 0;
+  }
 
-.single-activity:last-child {
-	border-bottom: 1px solid var(--border-color);
-}
+  .single-activity:last-child {
+    border-bottom: 1px solid var(--border-color);
+  }
 
-.single-activity:hover .completion-checkbox{
-	display: block;
-}
+  .single-activity:hover .completion-checkbox {
+    display: block;
+  }
 
-.completion-checkbox {
-	vertical-align: middle;
-	display: none;
-}
+  .completion-checkbox {
+    vertical-align: middle;
+    display: none;
+  }
 
-.checkbox {
-	min-width: 22px;
-}
+  .checkbox {
+    min-width: 22px;
+  }
 
-.open-section-head {
-	background-color: var(--bg-color);
-	min-height: 30px;
-	border-bottom: 1px solid var(--border-color);
-	padding: 10px;
-	font-weight: bold;
-}
+  .open-section-head {
+    background-color: var(--bg-color);
+    min-height: 30px;
+    border-bottom: 1px solid var(--border-color);
+    padding: 10px;
+    font-weight: bold;
+  }
 
-.no-activity {
+  .no-activity {
     text-align: center;
     padding-top: 30px;
-}
+  }
 
-.form-footer {
-	background-color: var(--bg-color);
-}
+  .form-footer {
+    background-color: var(--bg-color);
+  }
 </style>
