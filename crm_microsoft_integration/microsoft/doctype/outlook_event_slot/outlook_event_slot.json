@@ -1,6 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "hash",
  "creation": "2025-08-18 08:07:44.435138",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -231,10 +232,11 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-08-19 10:31:31.993400",
+ "modified": "2025-08-19 12:52:57.501915",
  "modified_by": "Administrator",
  "module": "Microsoft",
  "name": "Outlook Event Slot",
+ "naming_rule": "Random",
  "owner": "Administrator",
  "permissions": [
   {
