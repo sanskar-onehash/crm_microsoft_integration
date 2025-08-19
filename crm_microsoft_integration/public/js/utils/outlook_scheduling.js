@@ -236,8 +236,8 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
         click: this.add_slot_handler(),
       },
       {
-        fieldname: "section_break_2",
-        fieldtype: "Section Break",
+        fieldname: "column_break_2",
+        fieldtype: "Column Break",
       },
       {
         fieldname: "user_group",
@@ -285,7 +285,7 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
       },
       {
         fieldtype: "Column Break",
-        fieldname: "column_break_2",
+        fieldname: "column_break_3",
       },
       {
         default: "0",
