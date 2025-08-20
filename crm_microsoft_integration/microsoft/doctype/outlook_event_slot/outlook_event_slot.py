@@ -42,6 +42,23 @@ class OutlookEventSlot(WebsiteGenerator):
                 }
             )
 
+    def validate(self):
+        self.validate_repeat()
+        return super().validate()
+
+    def validate_repeat(self):
+        if self.repeat_this_event and not self.repeat_on:
+            frappe.throw("Repeat on is mandatory if chose to repeat this event.")
+
+        if self.repeat_on and self.repeat_on == "Weekly":
+            chosen_week_day = None
+            for week_field in WEEK_FIELDS:
+                if self.get(week_field):
+                    chosen_week_day = True
+                    break
+            if not chosen_week_day:
+                frappe.throw("Choose one or more week day/s to repeat on")
+
     def after_insert(self):
         self.db_set(
             {"route": f"slots/{self.name}", "published": 1},

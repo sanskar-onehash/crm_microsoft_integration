@@ -80,7 +80,8 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "\nUnconfirmed\nConfirmed"
+   "options": "\nUnconfirmed\nConfirmed",
+   "read_only": 1
   },
   {
    "default": "0",
@@ -114,6 +115,7 @@
    "fieldname": "repeat_on",
    "fieldtype": "Select",
    "label": "Repeat On",
+   "mandatory_depends_on": "repeat_this_event",
    "options": "\nDaily\nWeekly\nMonthly\nYearly"
   },
   {
@@ -265,8 +267,13 @@
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
- "links": [],
- "modified": "2025-08-19 23:37:50.543408",
+ "links": [
+  {
+   "link_doctype": "Event",
+   "link_fieldname": "custom_outlook_from_slot"
+  }
+ ],
+ "modified": "2025-08-20 06:06:19.833344",
  "modified_by": "Administrator",
  "module": "Microsoft",
  "name": "Outlook Event Slot",
