@@ -158,22 +158,36 @@
             <div class="event-description">{{ description }}</div>
             <div class="row">
               <i class="fa fa-clock-o"></i>
-              <span><strong>From:</strong> {{ selected_slot_start }}</span>
+              <span
+                ><strong style="margin-right: 10px">From:</strong>
+                <span id="selectedSlotStart"
+                  >{{ selected_slot_start }}</span
+                ></span
+              >
             </div>
             <div class="row">
               <i class="fa fa-clock-o"></i>
-              <span><strong>To:</strong> {{ selected_slot_end }}</span>
+              <span
+                ><strong style="margin-right: 10px">To:</strong>
+                <span id="selectedSlotEnd">{{ selected_slot_end }}</span></span
+              >
             </div>
 
             {% if selected_online and add_teams_meet %}
             <div class="row">
               <i class="fa fa-video-camera"></i>
-              <span><strong>Online:</strong> Link sent via email</span>
+              <span
+                ><strong style="margin-right: 10px">Online:</strong> Link sent
+                via email</span
+              >
             </div>
             {% elif not selected_online and event_location %}
             <div class="row">
               <i class="fa fa-map-o"></i>
-              <span><strong>Location:</strong> {{ event_location }}</span>
+              <span
+                ><strong style="margin-right: 10px">Location:</strong> {{
+                event_location }}</span
+              >
             </div>
             {% endif %} {% if repeat_this_event %}
             <div class="repeat-info">
@@ -198,98 +212,112 @@
     {{ include_script('frappe-web.bundle.js') }} {% endblock %}
 
     <script>
-        document.addEventListener("DOMContentLoaded", () => {
-          const slotButtons = document.querySelectorAll(".slot-btn");
-          const confirmBtn = document.getElementById("confirmBooking");
-          const bookingCard = document.getElementById("bookingCard");
-          const confirmationCard = document.getElementById("confirmationCard");
-          const confirmedText = document.getElementById("confirmedText");
-          const repeatInfoEl = document.getElementById("repeatInfo");
-          const selectedStart = document.getElementById("selectedStart");
-          const selectedEnd = document.getElementById("selectedEnd");
+              document.addEventListener("DOMContentLoaded", () => {
+                const slotButtons = document.querySelectorAll(".slot-btn");
+                const confirmBtn = document.getElementById("confirmBooking");
+                const bookingCard = document.getElementById("bookingCard");
+                const confirmationCard = document.getElementById("confirmationCard");
+                const confirmedText = document.getElementById("confirmedText");
+                const repeatInfoEl = document.getElementById("repeatInfo");
+                const selectedSlotStart = document.getElementById("selectedSlotStart");
+                const selectedSlotEnd = document.getElementById("selectedSlotEnd");
 
-          let selectedSlot = null;
-      let attendanceType = "{{ "" if event_location and add_teams_meet else "in-person" if event_location else "online"}}";
+                let selectedSlot = null;
+            let attendanceType = "{{ "" if event_location and add_teams_meet else "in-person" if event_location else "online"}}";
 
-      function enableSubmit() {
-      	confirmBtn.disabled = true;
-      	if (attendanceType && selectedSlot) {
-      		confirmBtn.disabled = false;
-      		confirmBtn.textContent = "Confirm Booking";
-      	} else if (attendanceType) {
-      		confirmBtn.textContent = "Select a slot to continue";
-      	} else {
-      		confirmBtn.textContent = "Select a meeting mode to continue";
-      	}
-      }
+            function enableSubmit() {
+            	confirmBtn.disabled = true;
+            	if (attendanceType && selectedSlot) {
+            		confirmBtn.disabled = false;
+            		confirmBtn.textContent = "Confirm Booking";
+            	} else if (attendanceType) {
+            		confirmBtn.textContent = "Select a slot to continue";
+            	} else {
+            		confirmBtn.textContent = "Select a meeting mode to continue";
+            	}
+            }
 
-          // Format slots
-          slotButtons.forEach((btn) => {
-            const start = new Date(btn.dataset.start);
-            const end = new Date(btn.dataset.end);
-            btn.querySelector(".slot-date").textContent =
-              start.toLocaleDateString("en-US", {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              });
-            btn.querySelector(".slot-time").textContent =
-              `${start.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} - ${end.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
+                // Format slots
+                slotButtons.forEach((btn) => {
+                  const start = new Date(btn.dataset.start);
+                  const end = new Date(btn.dataset.end);
+                  btn.querySelector(".slot-date").textContent =
+                    start.toLocaleDateString("en-US", {
+                      weekday: "long",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    });
+                  btn.querySelector(".slot-time").textContent =
+                    `${start.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} - ${end.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
 
-            btn.addEventListener("click", () => {
-              slotButtons.forEach((b) => b.classList.remove("selected"));
-              btn.classList.add("selected");
-              selectedSlot = { start, end, id: btn.dataset.id };
-      		enableSubmit();
-            });
-          });
+                  btn.addEventListener("click", () => {
+                    slotButtons.forEach((b) => b.classList.remove("selected"));
+                    btn.classList.add("selected");
+                    selectedSlot = { start, end, id: btn.dataset.id };
+            		enableSubmit();
+                  });
+                });
 
-          // Attendance type
-          document
-            .querySelectorAll("input[name='attendance']")
-            .forEach((radio) => {
-              radio.addEventListener("change", (e) => {
+                // Attendance type
+                document
+                  .querySelectorAll("input[name='attendance']")
+                  .forEach((radio) => {
+                    radio.addEventListener("change", (e) => {
 
-                attendanceType = e.target.value;
-      			enableSubmit();
-              });
-            });
+                      attendanceType = e.target.value;
+            			enableSubmit();
+                    });
+                  });
 
-          // Repeat info
-          if (repeatInfoEl) {
-            const weekDays = {{ week_days or [] }};
-            const repeatOn = "{{ repeat_on }}";
-            const repeatTill = "{{ repeat_till or "" }}";
+                // Repeat info
+                if (repeatInfoEl) {
+                  const weekDays = {{ week_days or [] }};
+                  const repeatOn = "{{ repeat_on }}";
+                  const repeatTill = "{{ repeat_till or "" }}";
 
-      	repeatInfoEl.innerHTML = `<p>Repeats ${repeatOn} ${repeatOn === "Weekly" ? "on <span class='capitalize'>" + weekDays.join(", ") + "</span>": ""} ${repeatTill ? ` until ${new Date(repeatTill).toLocaleDateString()}` : ""}</p>`;
-          }
-
-          // Confirm booking
-          confirmBtn && confirmBtn.addEventListener("click", () => {
-            if (!selectedSlot) return;
-            confirmBtn.disabled = true;
-
-            frappe.call({
-              method:
-                "crm_microsoft_integration.microsoft.doctype.outlook_event_slot.outlook_event_slot.confirm_slot",
-              args: {
-                slot_id: selectedSlot.id,
-                mode_online: attendanceType === "online",
-              },
-              callback: (res) => {
-                if (!res.exc) {
-                  bookingCard.classList.add("hidden");
-                  confirmationCard.classList.remove("hidden");
-
-                  selectedStart.textContent =
-                    selectedSlot.start.toLocaleDateString();
-                  selectedEnd.textContent = selectedSlot.end.toLocaleDateString();
+            	repeatInfoEl.innerHTML = `<p>Repeats ${repeatOn} ${repeatOn === "Weekly" ? "on <span class='capitalize'>" + weekDays.join(", ") + "</span>": ""} ${repeatTill ? ` until ${new Date(repeatTill).toLocaleDateString()}` : ""}</p>`;
                 }
-              },
-            });
-          });
-        });
+
+                // Confirm booking
+                confirmBtn && confirmBtn.addEventListener("click", () => {
+                  if (!selectedSlot) return;
+                  confirmBtn.disabled = true;
+
+                  frappe.call({
+                    method:
+                      "crm_microsoft_integration.microsoft.doctype.outlook_event_slot.outlook_event_slot.confirm_slot",
+                    args: {
+                      slot_id: selectedSlot.id,
+                      mode_online: attendanceType === "online",
+                    },
+                    callback: (res) => {
+                      if (!res.exc) {
+                        bookingCard.classList.add("hidden");
+                        confirmationCard.classList.remove("hidden");
+
+                        selectedSlotStart.textContent =
+                          selectedSlot.start.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+      });
+                        selectedSlotEnd.textContent = selectedSlot.end.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+      });
+                      }
+                    },
+                  });
+                });
+              });
     </script>
     <!-- csrf_token -->
     {%- block body_include %}{{ body_include or "" }}{% endblock -%}

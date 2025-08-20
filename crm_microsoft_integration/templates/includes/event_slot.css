@@ -98,6 +98,11 @@ body {
   margin-bottom: 2rem;
 }
 
+.booking-container .description *,
+.details-card .event-description * {
+  max-width: 100%;
+}
+
 .booking-container .attendance-options {
   margin: 1.5rem 0;
 }

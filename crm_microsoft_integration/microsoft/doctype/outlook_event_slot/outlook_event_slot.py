@@ -98,14 +98,17 @@ class OutlookEventSlot(WebsiteGenerator):
                 "repeat_this_event": self.repeat_this_event,
                 "all_day": self.all_day,
                 "custom_sync_with_ms_calendar": True,
-                "custom_add_teams_meet": online,
-                "custom_outlook_location": not online and self.event_location,
                 "custom_outlook_calendar": self.outlook_calendar,
                 "custom_outlook_organiser": self.organiser,
                 "repeat_on": self.repeat_on,
                 "repeat_till": self.repeat_till,
             }
         )
+
+        if online:
+            event_doc.set("custom_add_teams_meet", True)
+        elif self.event_location:
+            event_doc.set("custom_outlook_location", self.event_location)
 
         for week_field in WEEK_FIELDS:
             if self.get("week_field"):
