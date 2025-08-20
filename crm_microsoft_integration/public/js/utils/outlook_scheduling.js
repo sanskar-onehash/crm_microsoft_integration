@@ -225,7 +225,9 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
         fieldtype: "Table",
         label: "Slot Proposals",
         options: "Outlook Slot Proposals",
-        fields: await this.get_docfields("Outlook Slot Proposals"),
+        fields: this.prepare_table_fields(
+          await this.get_docfields("Outlook Slot Proposals"),
+        ),
         reqd: 1,
         cannot_add_rows: 1,
       },
@@ -261,7 +263,9 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
         fieldtype: "Table",
         label: "Event Participants",
         options: "Event Participants",
-        fields: await this.get_docfields("Event Participants"),
+        fields: this.prepare_table_fields(
+          await this.get_docfields("Event Participants"),
+        ),
         reqd: 1,
       },
       {
@@ -402,6 +406,19 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
     });
   }
 
+  prepare_table_fields(fields) {
+    return fields.map((field) => {
+      if (field.fieldtype === "Dynamic Link") {
+        field.get_options = this.handle_dialog_table_dynamic_field_options;
+      }
+      return field;
+    });
+  }
+
+  handle_dialog_table_dynamic_field_options(dynamic_field_control) {
+    return dynamic_field_control.doc[dynamic_field_control.df.options];
+  }
+
   get_docfields(doctype) {
     return new Promise((resolve) => {
       const docfields = frappe.meta.get_docfields(doctype);
@@ -410,7 +427,6 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
       }
 
       frappe.model.with_doctype(doctype, () => {
-        console.log(frappe.meta.get_docfields(doctype));
         return resolve(frappe.meta.get_docfields(doctype));
       });
     });
