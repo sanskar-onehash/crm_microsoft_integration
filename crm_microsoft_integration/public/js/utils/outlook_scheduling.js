@@ -54,8 +54,14 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
   }
 
   setup_listeners() {
+    this.scheduled_events_wrapper
+      .off("click")
+      .on("click", this.wrapper_click_handler());
+  }
+
+  wrapper_click_handler() {
     const me = this;
-    me.scheduled_events_wrapper.click(function (e) {
+    return function (e) {
       const closest_schedule_btn = e.target.closest(".schedule-btn");
       const closest_reschedule_btn = e.target.closest(".reschedule-btn");
       const closest_edit_btn = e.target.closest(".edit-btn");
@@ -71,20 +77,21 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
       } else if (closest_edit_btn) {
         //
       }
-    });
+    };
   }
 
-  handle_reschedule_event(e, eSrc, event_idx) {
-    eSrc.disabled = true;
+  handle_reschedule_event(e, e_src, event_idx) {
+    e_src.disabled = true;
     this.load_lib().then(async () => {
       //TODO: Implement rescheduling flow
     });
   }
 
-  handle_schedule_event(e, eSrc) {
-    eSrc.disabled = true;
+  handle_schedule_event(e, e_src) {
+    e_src.disabled = true;
     this.load_lib().then(async () => {
       this.slot_dialog = await this.get_slot_dialog(this.default_data);
+      this.slot_dialog.event_src_el = e_src;
       this.slot_dialog.show();
     });
   }
@@ -154,6 +161,7 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
         },
         callback: function (res) {
           if (!res.exc) {
+            me.slot_dialog.event_src_el.disabled = false;
             me.slot_dialog.hide();
             me.refresh();
             frappe.show_alert({
@@ -163,6 +171,12 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
           }
         },
       });
+    };
+  }
+
+  cancel_slot_schedule() {
+    return () => {
+      this.slot_dialog.event_src_el.disabled = false;
     };
   }
 
@@ -378,6 +392,7 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
       size: "extra-large", // small, large, extra-large
       primary_action_label: BTN_LABEL,
       primary_action: this.schedule_slot_handler(),
+      on_hide: this.cancel_slot_schedule(),
     });
   }
 
