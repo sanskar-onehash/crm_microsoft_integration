@@ -224,6 +224,11 @@
 
                 let selectedSlot = null;
             let attendanceType = "{{ "" if event_location and add_teams_meet else "in-person" if event_location else "online"}}";
+      		const params = {}
+      		window.location.search.slice(1).split("&").forEach(param => {
+      			const [key, value] = param.split("=");
+      			params[key] = value
+      		})
 
             function enableSubmit() {
             	confirmBtn.disabled = true;
@@ -257,6 +262,9 @@
                     selectedSlot = { start, end, id: btn.dataset.id };
             		enableSubmit();
                   });
+      			if (params.slot && params.slot === btn.dataset.id) {
+      				btn.click();
+      			}
                 });
 
                 // Attendance type
