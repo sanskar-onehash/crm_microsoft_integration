@@ -179,9 +179,17 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
     const BTN_LABEL = "Schedule Event";
     const fields = [
       {
+        label: "Email Template",
+        fieldtype: "Link",
+        fieldname: "email_template",
+        options: "Email Template",
+      },
+      {
         label: "Subject",
         fieldtype: "Small Text",
         fieldname: "subject",
+        fetch_from: "email_template.subject",
+        fetch_if_empty: 1,
         reqd: 1,
       },
       {
@@ -192,12 +200,6 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
       {
         fieldtype: "Column Break",
         fieldname: "culumn_break_1",
-      },
-      {
-        label: "Email Template",
-        fieldtype: "Link",
-        fieldname: "email_template",
-        options: "Email Template",
       },
       {
         label: "Outlook Calendar",

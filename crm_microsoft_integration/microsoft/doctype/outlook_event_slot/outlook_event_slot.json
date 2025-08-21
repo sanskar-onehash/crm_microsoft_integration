@@ -46,6 +46,8 @@
  ],
  "fields": [
   {
+   "fetch_from": "email_template.subject",
+   "fetch_if_empty": 1,
    "fieldname": "subject",
    "fieldtype": "Small Text",
    "in_list_view": 1,
@@ -288,7 +290,7 @@
    "link_fieldname": "custom_outlook_from_slot"
   }
  ],
- "modified": "2025-08-21 06:44:26.203336",
+ "modified": "2025-08-21 09:51:18.254257",
  "modified_by": "Administrator",
  "module": "Microsoft",
  "name": "Outlook Event Slot",
