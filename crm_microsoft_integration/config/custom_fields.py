@@ -91,6 +91,7 @@ EVENT_CUSTOM_FIELDS = [
         "fieldtype": "Table",
         "options": "Outlook Reschedule History",
         "fieldname": "custom_outlook_reschedule_history",
+        "read_only": 1,
     },
     {
         "doctype": "Custom Field",
