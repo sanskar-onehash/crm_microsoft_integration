@@ -12,7 +12,7 @@
   <div class="section-body">
     <div class="scheduled-events">
       <div class="open-section-head">
-        <span>{{ __("Open Events") }}</span>
+        <span>{{ __("Calendar Events") }}</span>
       </div>
 
       {% if (events && events.length) { %} {% for (var i = 0; i < events.length;
@@ -85,7 +85,7 @@
             participant = event.participants[p]; %} {% var label =
             participant.participant_name || participant.email; %} {% var
             initials = label ? label.charAt(0).toUpperCase() : "?"; %}
-            <div class="participant">
+            <div class="participant" style="left: {{ p * -5 }}px;">
               <div
                 class="participant-circle"
                 style="background-color: {{ ['#4F46E5','#059669','#D97706','#DB2777','#2563EB','#DC2626','#0D9488'][p % 7] }}"
@@ -292,7 +292,7 @@
   .participants {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 0px;
   }
   .participant {
     position: relative;
