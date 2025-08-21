@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe.model.document import DocStatus
 from frappe.website.website_generator import WebsiteGenerator
 
 WEEK_FIELDS = [
@@ -102,6 +103,7 @@ class OutlookEventSlot(WebsiteGenerator):
                 "custom_outlook_organiser": self.organiser,
                 "repeat_on": self.repeat_on,
                 "repeat_till": self.repeat_till,
+                "event_type": "Public",
             }
         )
 
@@ -147,9 +149,10 @@ class OutlookEventSlot(WebsiteGenerator):
                 "selected_online": online,
                 "selected_slot_start": starts_on,
                 "selected_slot_end": ends_on,
+                "docstatus": DocStatus.submitted(),
             }
         )
-        self.submit()
+        self.save(ignore_permissions=True)
 
 
 @frappe.whitelist()

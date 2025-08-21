@@ -10,154 +10,338 @@
     </span>
   </div>
   <div class="section-body">
-    <div class="scheduled-events pl-1">
+    <div class="scheduled-events">
       <div class="open-section-head">
-        <span class="ml-2">{{ __("Open Events") }}</span>
+        <span>{{ __("Open Events") }}</span>
       </div>
-      {% if (events.length) { %} {% let icon_set = {"Sent/Received Email":
-      "mail", "Call": "call", "Meeting": "share-people"}; %} {% for (var i = 0;
-      i < events.length; i++) { %}
-      <div class="single-activity border rounded p-4 mb-3 shadow-sm bg-white">
-        <!-- Header Row: Icon, Subject, Type -->
-        <div class="flex justify-between items-start mb-2">
-          <div class="flex items-center title font-md">
-            <span class="mr-2">
-              <svg class="icon icon-sm">
-                <use
-                  href="#icon-{{ icon_set[events[i].event_category] || 'calendar' }}"
-                ></use>
-              </svg>
-            </span>
-            <div>
-              <a
-                href="/app/event/{{ events[i].name }}"
-                class="text-primary font-semibold"
-                title="{{ __('Open Event') }}"
-              >
-                {%= events[i].subject %}
-              </a>
-              <div class="text-xs text-muted mt-1">{%= events[i].type %}</div>
-            </div>
-          </div>
 
-          <!-- Actions -->
-          <div class="flex items-center space-x-2">
-            {% if (i == 0) { %}
-            <button
-              class="btn btn-sm btn-warning reschedule-btn"
-              data-event="{{ events[i].name }}"
-              data-event-idx="{{ i }}"
+      {% if (events && events.length) { %} {% for (var i = 0; i < events.length;
+      i++) { %} {% var event = events[i]; %}
+      <div class="event-card">
+        <div class="event-actions">
+          <button
+            class="edit-btn"
+            title="Edit Event"
+            data-event="{{ event.name }}"
+            data-event-type="{{ event.type }}"
+            data-event-idx="{{ i }}"
+          >
+            <svg class="es-icon es-line icon-sm">
+              <use href="#es-line-edit"></use>
+            </svg>
+          </button>
+        </div>
+
+        <div class="event-header">
+          <div>
+            <a
+              href="/app/{{ event.type.toLocaleLowerCase().replaceAll(' ', '-') }}/{{ event.name }}"
+              class="event-subject"
+              target="_blank"
             >
-              {{ __("Reschedule") }}
-            </button>
-            {% } %}
-            <!-- <input type="checkbox" class="completion-checkbox" -->
-            <!--     name="{{ events[i].name }}" title="{{ __('Mark As Closed') }}"> -->
+              {{ event.subject }}
+            </a>
+            <div class="event-type">
+              {{ event.type === "Outlook Event Slot" ? "Slot" : event.type }}
+            </div>
           </div>
         </div>
 
-        <!-- Meeting Mode Indicator -->
-        <div class="text-xs text-muted mb-2 ml-1">
-          {% let modes = []; %} {% if (events[i].add_teams_meet) { %} {%
-          modes.push("Online"); %} {% } %} {% if (events[i].event_location) { %}
-          {% modes.push("Offline"); %} {% } %} {% if (modes.length) { %}
-          <span class="badge bg-light border px-2 py-1 rounded text-muted">
-            {{ modes.join(" & ") }}
-          </span>
+        <!-- Organiser + Location/Online -->
+        <div class="event-meta">
+          {% if (event.organiser) { %}
+          <span class="organiser">👤 {{ event.organiser }}</span>
+          {% } %} {% if (event.is_online) { %}
+          <span class="badge badge-online">Online</span>
+          {% if (event.meeting_link) { %}
+          <a
+            href="{{ event.meeting_link }}"
+            target="_blank"
+            class="meeting-link"
+          >
+            Join Meeting
+          </a>
+          {% } %} {% } else if (event.location) { %}
+          <span class="badge badge-location">📍 {{ event.location }}</span>
           {% } %}
         </div>
 
         <!-- Time Slots -->
-        <div class="ml-1 text-muted text-sm mb-2">
-          {% if (events[i].time_slots && events[i].time_slots.length) { %}
-          <ul class="list-disc pl-4">
-            {% for (var j = 0; j < events[i].time_slots.length; j++) { %}
-            <li>
-              {%=
-              frappe.datetime.global_date_format(events[i].time_slots[j].starts_on)
-              %} {%= frappe.datetime.get_time(events[i].time_slots[j].starts_on)
-              %} - {%= frappe.datetime.get_time(events[i].time_slots[j].ends_on)
-              %}
-            </li>
+        {% if (event.slots && event.slots.length) { %}
+        <div class="event-slots">
+          <ul>
+            {% for (var s = 0; s < event.slots.length; s++) { %} {% var slot =
+            event.slots[s]; %}
+            <li>🕒 {{ slot.starts_on }} → {{ slot.ends_on }}</li>
             {% } %}
           </ul>
-          {% } %}
         </div>
-
-        <!-- Description -->
-        {% if (events[i].description) { %}
-        <div class="ql-editor read-mode text-sm mt-2">
-          {{ events[i].description }}
-        </div>
+        {% } %} {% if (event.description) { %}
+        <div class="event-description">{{ event.description }}</div>
         {% } %}
+        <div class="event-footer">
+          <div class="participants">
+            {% for (var p = 0; p < event.participants.length; p++) { %} {% var
+            participant = event.participants[p]; %} {% var label =
+            participant.participant_name || participant.email; %} {% var
+            initials = label ? label.charAt(0).toUpperCase() : "?"; %}
+            <div class="participant">
+              <div
+                class="participant-circle"
+                style="background-color: {{ ['#4F46E5','#059669','#D97706','#DB2777','#2563EB','#DC2626','#0D9488'][p % 7] }}"
+              >
+                {{ initials }}
+              </div>
+              <div class="tooltip">{{ participant.email }}</div>
+            </div>
+            {% } %}
+          </div>
+
+          <div class="event-footer-actions">
+            {% if (event.can_reschedule) { %}
+            <button
+              class="btn btn-sm btn-warning reschedule-btn"
+              data-event="{{ event.name }}"
+              data-event-type="{{ event.type }}"
+              data-event-idx="{{ i }}"
+            >
+              Reschedule
+            </button>
+            {% } %}
+          </div>
+        </div>
       </div>
       {% } %} {% } else { %}
-      <div class="single-activity no-activity text-muted">
+      <div class="single-activity no-activity">
         {{ __("No scheduled activity") }}
       </div>
       {% } %}
     </div>
   </div>
 </div>
-
 <style>
-  .custom_wrapper {
-    width: 100%;
-  }
-
-  .scheduled-events {
-    width: 100%;
-  }
-
+  /* --- Base --- */
   .outlook-scheduling {
     min-height: 50px;
-    padding-left: 0px;
-    padding-bottom: 15px !important;
+    padding: 0 0 15px 0;
+    font-family:
+      system-ui,
+      -apple-system,
+      "Segoe UI",
+      Roboto,
+      sans-serif;
+    color: #333;
   }
-
   .outlook-scheduling .new-btn {
     text-align: right;
+    margin-bottom: 1rem;
+  }
+  .btn {
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    transition:
+      background 0.2s ease,
+      color 0.2s ease;
+  }
+  .btn-sm {
+    padding: 5px 10px;
+    font-size: 13px;
+  }
+  .btn-primary {
+    background: #2563eb;
+    color: #fff;
+  }
+  .btn-primary:hover {
+    background: #1e4fc3;
+  }
+  .btn-warning {
+    background: #f59e0b;
+    color: #fff;
+  }
+  .btn-warning:hover {
+    background: #d97706;
+    color: #fff;
   }
 
-  .single-activity {
-    min-height: 90px;
-    border: 1px solid var(--border-color);
-    padding: 10px;
-    border-bottom: 0;
-    padding-right: 0;
+  /* --- Section --- */
+  .scheduled-events {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
   }
-
-  .single-activity:last-child {
-    border-bottom: 1px solid var(--border-color);
-  }
-
-  .single-activity:hover .completion-checkbox {
-    display: block;
-  }
-
-  .completion-checkbox {
-    vertical-align: middle;
-    display: none;
-  }
-
-  .checkbox {
-    min-width: 22px;
-  }
-
   .open-section-head {
-    background-color: var(--bg-color);
-    min-height: 30px;
-    border-bottom: 1px solid var(--border-color);
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
     padding: 10px;
     font-weight: bold;
+    font-size: 14px;
   }
 
+  /* --- Event Card --- */
+  .event-card {
+    position: relative;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 20px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    transition: box-shadow 0.3s ease;
+  }
+  .event-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  /* --- Actions --- */
+  .event-actions {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+  }
+  .edit-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #6b7280;
+    transition: color 0.2s ease;
+  }
+  .edit-btn:hover {
+    color: #2563eb;
+  }
+
+  /* --- Header --- */
+  .event-header {
+    margin-bottom: 12px;
+  }
+  .event-subject {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2937;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+  .event-subject:hover {
+    color: #2563eb;
+  }
+  .event-type {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 4px;
+  }
+
+  /* --- Meta --- */
+  .event-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+    font-size: 13px;
+  }
+  .organiser {
+    color: #4b5563;
+  }
+  .badge {
+    padding: 2px 6px;
+    font-size: 11px;
+    font-weight: 500;
+    border-radius: 4px;
+  }
+  .badge-online {
+    background: #eff6ff;
+    color: #2563eb;
+  }
+  .badge-location {
+    background: #ecfdf5;
+    color: #059669;
+  }
+  .meeting-link {
+    color: #2563eb;
+    font-size: 12px;
+    margin-left: 4px;
+    text-decoration: none;
+  }
+  .meeting-link:hover {
+    text-decoration: underline;
+  }
+
+  /* --- Slots --- */
+  .event-slots {
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: #4b5563;
+  }
+  .event-slots ul {
+    list-style: disc;
+    padding-left: 20px;
+  }
+
+  /* --- Description --- */
+  .event-description {
+    font-size: 13px;
+    color: #374151;
+    margin-bottom: 16px;
+    line-height: 1.4;
+    max-height: 200px;
+    overflow-y: scroll;
+  }
+
+  /* --- Participants --- */
+  .participants {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .participant {
+    position: relative;
+  }
+  .participant-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    cursor: default;
+  }
+  .tooltip {
+    position: absolute;
+    bottom: 110%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    white-space: nowrap;
+    background: #111827;
+    color: #fff;
+    font-size: 11px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+  }
+  .participant:hover .tooltip {
+    opacity: 1;
+  }
+
+  /* --- Footer --- */
+  .event-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+  }
+
+  /* --- Empty State --- */
   .no-activity {
     text-align: center;
-    padding-top: 30px;
-  }
-
-  .form-footer {
-    background-color: var(--bg-color);
+    padding: 30px 0;
+    font-size: 14px;
+    color: #6b7280;
   }
 </style>

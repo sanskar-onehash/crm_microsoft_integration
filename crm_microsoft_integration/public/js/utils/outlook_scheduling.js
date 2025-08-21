@@ -40,13 +40,14 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
       },
       callback: (r) => {
         if (!r.exc) {
-          me.events = r.message;
+          me.events_data = r.message;
           const activities_html = frappe.render_template("outlook_scheduling", {
-            events: r.message,
+            events: r.message.events,
           });
 
           $(activities_html).appendTo(me.scheduled_events_wrapper);
           me.setup_listeners();
+          me.on_refresh && me.on_refresh();
         }
       },
     });
@@ -55,22 +56,33 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
   setup_listeners() {
     const me = this;
     me.scheduled_events_wrapper.click(function (e) {
-      if (e.target.closest(".schedule-btn")) {
-        me.schedule_event();
-      } else if (e.target.closest(".reschedule-btn")) {
-        const event_idx = me.reschedule_event(e.target.dataset.eventIdx);
-        reschedule_event(event_idx);
+      const closest_schedule_btn = e.target.closest(".schedule-btn");
+      const closest_reschedule_btn = e.target.closest(".reschedule-btn");
+      const closest_edit_btn = e.target.closest(".edit-btn");
+
+      if (closest_schedule_btn) {
+        me.handle_schedule_event(e, closest_schedule_btn);
+      } else if (closest_reschedule_btn) {
+        me.handle_reschedule_event(
+          e,
+          closest_reschedule_btn,
+          e.target.dataset.eventIdx,
+        );
+      } else if (closest_edit_btn) {
+        //
       }
     });
   }
 
-  reschedule_event(event_idx) {
+  handle_reschedule_event(e, eSrc, event_idx) {
+    eSrc.disabled = true;
     this.load_lib().then(async () => {
       //TODO: Implement rescheduling flow
     });
   }
 
-  schedule_event() {
+  handle_schedule_event(e, eSrc) {
+    eSrc.disabled = true;
     this.load_lib().then(async () => {
       this.slot_dialog = await this.get_slot_dialog(this.default_data);
       this.slot_dialog.show();
@@ -133,6 +145,7 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
   schedule_slot_handler() {
     const me = this;
     return function (values) {
+      frappe.msgprint("Creating Event Slots...");
       frappe.call({
         method:
           "crm_microsoft_integration.microsoft.doctype.outlook_event_slot.outlook_event_slot.create_slot",
@@ -142,8 +155,9 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
         callback: function (res) {
           if (!res.exc) {
             me.slot_dialog.hide();
+            me.refresh();
             frappe.show_alert({
-              message: "Event Scheduled successfully.",
+              message: "Event slots created successfully.",
               indicator: "green",
             });
           }
@@ -178,6 +192,12 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
       {
         fieldtype: "Column Break",
         fieldname: "culumn_break_1",
+      },
+      {
+        label: "Email Template",
+        fieldtype: "Link",
+        fieldname: "email_template",
+        options: "Email Template",
       },
       {
         label: "Outlook Calendar",

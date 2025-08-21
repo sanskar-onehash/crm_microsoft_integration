@@ -8,6 +8,7 @@
  "field_order": [
   "subject",
   "description",
+  "email_template",
   "selected_online",
   "selected_slot_start",
   "selected_slot_end",
@@ -15,6 +16,7 @@
   "status",
   "outlook_calendar",
   "organiser",
+  "organiser_name",
   "color",
   "event_location",
   "add_teams_meet",
@@ -84,7 +86,7 @@
    "read_only": 1
   },
   {
-   "default": "0",
+   "default": "1",
    "fieldname": "add_teams_meet",
    "fieldtype": "Check",
    "label": "Add Teams Meet"
@@ -263,6 +265,19 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "fetch_from": "organiser.display_name",
+   "fieldname": "organiser_name",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Organiser Name"
+  },
+  {
+   "fieldname": "email_template",
+   "fieldtype": "Link",
+   "label": "Email Template",
+   "options": "Email Template"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -273,7 +288,7 @@
    "link_fieldname": "custom_outlook_from_slot"
   }
  ],
- "modified": "2025-08-20 06:06:19.833344",
+ "modified": "2025-08-21 06:44:26.203336",
  "modified_by": "Administrator",
  "module": "Microsoft",
  "name": "Outlook Event Slot",
