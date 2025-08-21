@@ -26,6 +26,7 @@
   "route",
   "section_break_xghr",
   "slot_proposals",
+  "reschedule_history",
   "column_break_qeay",
   "user_group",
   "users",
@@ -280,6 +281,13 @@
    "fieldtype": "Link",
    "label": "Email Template",
    "options": "Email Template"
+  },
+  {
+   "fieldname": "reschedule_history",
+   "fieldtype": "Table",
+   "label": "Reschedule History",
+   "options": "Outlook Slot Reschedule History",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
@@ -290,7 +298,7 @@
    "link_fieldname": "custom_outlook_from_slot"
   }
  ],
- "modified": "2025-08-21 09:51:18.254257",
+ "modified": "2025-08-21 12:49:27.445982",
  "modified_by": "Administrator",
  "module": "Microsoft",
  "name": "Outlook Event Slot",

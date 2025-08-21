@@ -55,3 +55,7 @@ def delete_cal_event(event_id, user_id, calendar_id=None):
             return "Event not found"
         else:
             raise e
+
+
+def cancel_cal_event(event_id, user_id, calendar_id=None):
+    api.cancel_user_event(event_id, user_id, calendar_id=calendar_id)

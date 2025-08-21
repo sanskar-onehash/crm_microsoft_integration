@@ -72,7 +72,7 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
         me.handle_reschedule_event(
           e,
           closest_reschedule_btn,
-          e.target.dataset.eventIdx,
+          +e.target.dataset.eventIdx,
         );
       } else if (closest_edit_btn) {
         //
@@ -83,7 +83,9 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
   handle_reschedule_event(e, e_src, event_idx) {
     e_src.disabled = true;
     this.load_lib().then(async () => {
-      //TODO: Implement rescheduling flow
+      this.reschedule_dialog = await this.get_reschedule_dialog(event_idx);
+      this.reschedule_dialog.event_src_el = e_src;
+      this.reschedule_dialog.show();
     });
   }
 
@@ -149,6 +151,34 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
     };
   }
 
+  reschedule_slot_handler(event_idx) {
+    const me = this;
+    const event = me.events_data.events[event_idx];
+    return function (values) {
+      frappe.msgprint("Rescheduling Event Slots...");
+      frappe.call({
+        method:
+          "crm_microsoft_integration.microsoft.doctype.outlook_event_slot.outlook_event_slot.reschedule_event_slots",
+        args: {
+          event_type: event.type,
+          event_name: event.name,
+          new_slots: values.slot_proposals,
+        },
+        callback: function (res) {
+          if (!res.exc) {
+            me.reschedule_dialog.event_src_el.disabled = false;
+            me.reschedule_dialog.hide();
+            me.refresh();
+            frappe.show_alert({
+              message: "Event slots rescheduled successfully.",
+              indicator: "green",
+            });
+          }
+        },
+      });
+    };
+  }
+
   schedule_slot_handler() {
     const me = this;
     return function (values) {
@@ -180,6 +210,12 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
     };
   }
 
+  cancel_slot_reschedule() {
+    return () => {
+      this.reschedule_dialog.event_src_el.disabled = false;
+    };
+  }
+
   async update_status(input_field, doctype) {
     let completed = $(input_field).prop("checked") ? 1 : 0;
     let docname = $(input_field).attr("name");
@@ -187,6 +223,37 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
       await frappe.db.set_value(doctype, docname, "status", "Closed");
       this.refresh();
     }
+  }
+
+  async get_reschedule_dialog(event_idx) {
+    const BTN_LABEL = "Reschedule Event";
+    const fields = [
+      {
+        fieldname: "slot_proposals",
+        fieldtype: "Table",
+        label: "Slot Proposals",
+        options: "Outlook Slot Proposals",
+        fields: this.prepare_table_fields(
+          await this.get_docfields("Outlook Slot Proposals"),
+        ),
+        reqd: 1,
+        cannot_add_rows: 1,
+      },
+      {
+        fieldname: "add_slot",
+        fieldtype: "Button",
+        label: "Add Slot",
+        click: this.add_slot_handler(),
+      },
+    ];
+    return new frappe.ui.Dialog({
+      title: "Schedule Event",
+      fields,
+      size: "extra-large", // small, large, extra-large
+      primary_action_label: BTN_LABEL,
+      primary_action: this.reschedule_slot_handler(event_idx),
+      on_hide: this.cancel_slot_reschedule(),
+    });
   }
 
   async get_slot_dialog(default_data) {
@@ -409,9 +476,37 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
     });
   }
 
+  calendar_on_select_handler(start_date, end_date, js_event, view) {
+    let proposals_grid = null;
+    if (this.scheduling.slot_dialog?.is_visible) {
+      proposals_grid =
+        this.scheduling.slot_dialog.fields_dict.slot_proposals.grid;
+    } else if (this.scheduling.reschedule_dialog?.is_visible) {
+      proposals_grid =
+        this.scheduling.reschedule_dialog.fields_dict.slot_proposals.grid;
+    }
+    if (proposals_grid) {
+      if (!proposals_grid.df.data) {
+        proposals_grid.df.data = proposals_grid.get_data() || [];
+      }
+      const row_idx = proposals_grid.df.data.length + 1;
+      proposals_grid.df.data.push({
+        idx: row_idx,
+        __islocal: true,
+        starts_on: frappe.datetime.get_datetime_as_string(start_date, false),
+        ends_on: frappe.datetime.get_datetime_as_string(end_date, false),
+      });
+      proposals_grid.df.on_add_row && proposals_grid.df.on_add_row(row_idx);
+      proposals_grid.refresh();
+    }
+
+    this.scheduling.calendar_dialog.cancel();
+  }
+
   get_calendar_preferences(parent) {
     return {
       scheduling: this,
+      custom_on_select: this.calendar_on_select_handler,
       doctype: "Event",
       field_map: {
         id: "name",
@@ -545,22 +640,10 @@ class CustomizedCalendar extends frappe.views.Calendar {
           return;
         }
 
-        const proposals_grid =
-          me.scheduling.slot_dialog.fields_dict.slot_proposals.grid;
-        if (!proposals_grid.df.data) {
-          proposals_grid.df.data = proposals_grid.get_data() || [];
-        }
-        const row_idx = proposals_grid.df.data.length + 1;
-        proposals_grid.df.data.push({
-          idx: row_idx,
-          __islocal: true,
-          starts_on: frappe.datetime.get_datetime_as_string(startDate, false),
-          ends_on: frappe.datetime.get_datetime_as_string(endDate, false),
-        });
-        proposals_grid.df.on_add_row && proposals_grid.df.on_add_row(row_idx);
-        proposals_grid.refresh();
+        me.custom_on_select &&
+          me.custom_on_select(startDate, endDate, jsEvent, view);
+
         this.removeElement();
-        me.scheduling.calendar_dialog.cancel();
       },
       dayClick: function (date, jsEvent, view) {
         if (view.name === "month") {

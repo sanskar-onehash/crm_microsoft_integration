@@ -53,3 +53,15 @@ def delete_user_event(
     events_endpoint += EVENTS_ENDPOINT + f"/{event_id}"
 
     return utils.make_delete_request(config.GRAPH_BASE_URI, events_endpoint)
+
+
+def cancel_user_event(
+    event_id, user_id, calendar_events=False, calendar_id=None, group_id=None
+):
+    events_endpoint = f"{ENDPOINT_BASE}/{user_id}"
+    if calendar_id or calendar_events:
+        events_endpoint += f"{f'/calendarGroups/{group_id}' if group_id else ''}/calendar{f's/{calendar_id}' if calendar_id else ''}"
+
+    events_endpoint += EVENTS_ENDPOINT + f"/{event_id}/cancel"
+
+    return utils.make_post_request(config.GRAPH_BASE_URI, events_endpoint)

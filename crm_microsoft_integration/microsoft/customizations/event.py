@@ -63,26 +63,35 @@ def event_on_update(doc, method=None):
     if not outlook_calendar.push_to_outlook_calendar:
         return
 
-    microsoft_user_doc = frappe.get_doc("Microsoft User", doc.custom_outlook_organiser)
-    outlook_event, missing_email_participants = event.update_cal_event(
-        doc, microsoft_user_doc, outlook_calendar
-    )
-
-    if missing_email_participants:
-        frappe.msgprint(
-            _(
-                "Outlook Calendar - Participant email not found. Did not add attendee for -<br>{0}"
-            ).format(
-                "<br>".join(
-                    f"{d.get('participant_name')} {d.get('ref_dt')} {d.get('ref_dn')}"
-                    for d in missing_email_participants
-                )
-            ),
-            alert=True,
-            indicator="yellow",
+    if doc.status == "Cancelled":
+        event.cancel_cal_event(
+            doc.custom_outlook_event_id,
+            doc.custom_outlook_organiser,
+            outlook_calendar.id,
+        )
+    else:
+        microsoft_user_doc = frappe.get_doc(
+            "Microsoft User", doc.custom_outlook_organiser
+        )
+        outlook_event, missing_email_participants = event.update_cal_event(
+            doc, microsoft_user_doc, outlook_calendar
         )
 
-    check_and_set_updates_to_db(doc, outlook_event)
+        if missing_email_participants:
+            frappe.msgprint(
+                _(
+                    "Outlook Calendar - Participant email not found. Did not add attendee for -<br>{0}"
+                ).format(
+                    "<br>".join(
+                        f"{d.get('participant_name')} {d.get('ref_dt')} {d.get('ref_dn')}"
+                        for d in missing_email_participants
+                    )
+                ),
+                alert=True,
+                indicator="yellow",
+            )
+
+        check_and_set_updates_to_db(doc, outlook_event)
 
 
 def event_on_trash(doc, method=None):

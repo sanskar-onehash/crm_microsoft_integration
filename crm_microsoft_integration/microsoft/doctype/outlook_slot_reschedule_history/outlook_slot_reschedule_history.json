@@ -1,42 +1,20 @@
 {
  "actions": [],
  "allow_rename": 1,
- "creation": "2025-08-21 11:28:26.153455",
+ "creation": "2025-08-21 12:46:09.361601",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "starts_on",
-  "ends_on",
-  "outlook_slot",
   "rescheduled_by",
   "rescheduled_on"
  ],
  "fields": [
   {
-   "fieldname": "starts_on",
-   "fieldtype": "Datetime",
-   "in_list_view": 1,
-   "label": "Starts On",
-   "reqd": 1
-  },
-  {
-   "fieldname": "ends_on",
-   "fieldtype": "Datetime",
-   "in_list_view": 1,
-   "label": "Ends On"
-  },
-  {
-   "fieldname": "outlook_slot",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Outlook Slot",
-   "options": "Outlook Event Slot"
-  },
-  {
    "default": "__user",
    "fieldname": "rescheduled_by",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Rescheduled By",
    "options": "User",
    "read_only": 1,
@@ -46,6 +24,7 @@
    "default": "Now",
    "fieldname": "rescheduled_on",
    "fieldtype": "Datetime",
+   "in_list_view": 1,
    "label": "Rescheduled On",
    "read_only": 1,
    "reqd": 1
@@ -54,10 +33,10 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-08-21 13:33:49.040102",
+ "modified": "2025-08-21 12:48:42.276818",
  "modified_by": "Administrator",
  "module": "Microsoft",
- "name": "Outlook Reschedule History",
+ "name": "Outlook Slot Reschedule History",
  "owner": "Administrator",
  "permissions": [],
  "sort_field": "modified",
