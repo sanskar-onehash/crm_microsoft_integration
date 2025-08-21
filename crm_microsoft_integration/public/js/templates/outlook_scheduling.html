@@ -76,6 +76,10 @@
             {% } %}
           </ul>
         </div>
+        {% } %} {% if (event.starts_on) { %}
+        <div class="event-slots">
+          <div>🕒 {{ event.starts_on }} → {{ event.ends_on }}</div>
+        </div>
         {% } %} {% if (event.description) { %}
         <div class="event-description">{{ event.description }}</div>
         {% } %}

@@ -50,6 +50,8 @@ def get_reference_events(ref_doctype, ref_docname):
             ),
             IfNull(EventSlot.creation, Event.creation).as_("creation"),
             Event.custom_outlook_meeting_link.as_("meeting_link"),
+            Event.starts_on,
+            Event.ends_on,
         )
         .where(
             (EventParticipants.reference_doctype == ref_doctype)
