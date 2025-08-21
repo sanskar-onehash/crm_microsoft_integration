@@ -91,7 +91,11 @@ def get_reference_events(ref_doctype, ref_docname):
         if event.type == "Outlook Event Slot" and event.status == "Confirmed":
             continue
 
-        if not have_upcoming_events and event.starts_on > now_datetime:
+        if (
+            not have_upcoming_events
+            and event.starts_on
+            and event.starts_on > now_datetime
+        ):
             have_upcoming_events = True
 
         if last_event and last_event["name"] != event.name:
