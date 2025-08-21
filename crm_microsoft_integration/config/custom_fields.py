@@ -86,7 +86,16 @@ EVENT_CUSTOM_FIELDS = [
     {
         "doctype": "Custom Field",
         "dt": "Event",
+        "label": "Outlook Reschedule History",
         "insert_after": "custom_outlook_from_slot",
+        "fieldtype": "Table",
+        "options": "Outlook Reschedule History",
+        "fieldname": "custom_outlook_reschedule_history",
+    },
+    {
+        "doctype": "Custom Field",
+        "dt": "Event",
+        "insert_after": "custom_outlook_reschedule_history",
         "fieldtype": "Column Break",
         "fieldname": "custom_column_break_outlook_2",
     },
