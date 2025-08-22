@@ -89,7 +89,7 @@ def set_access_token(token_type, access_token, expires_in):
             "access_token_expiry": access_token_expiry,
         }
     )
-    mi_settings.save()
+    mi_settings.save(ignore_permissions=True)
 
 
 def get_client_credentials():
