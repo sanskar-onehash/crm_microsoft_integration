@@ -70,10 +70,10 @@ def event_on_update(doc, method=None):
         return
 
     if doc.status == "Cancelled":
-        if not len(event.reschedule_history):
+        if not len(event.custom_outlook_reschedule_history):
             frappe.throw("Reschedule history not maintained")
-        cancellation_reason = event.reschedule_history[
-            len(event.reschedule_history) - 1
+        cancellation_reason = event.custom_outlook_reschedule_history[
+            len(event.custom_outlook_reschedule_history) - 1
         ].reschedule_reason
         event.cancel_cal_event(
             doc.custom_outlook_event_id,
