@@ -140,7 +140,7 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
     const me = this;
     const event = me.events_data.events[event_idx];
     return function (values) {
-      frappe.msgprint("Rescheduling Event Slots...");
+      const reschedulingMsg = frappe.msgprint("Rescheduling Event Slots...");
       frappe.call({
         method:
           "crm_microsoft_integration.microsoft.doctype.outlook_event_slot.outlook_event_slot.reschedule_event_slots",
@@ -154,6 +154,7 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
             me.reschedule_dialog.event_src_el.disabled = false;
             me.reschedule_dialog.hide();
             me.refresh();
+            reschedulingMsg.hide();
             frappe.show_alert({
               message: "Event slots rescheduled successfully.",
               indicator: "green",
