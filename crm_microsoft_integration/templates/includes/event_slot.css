@@ -405,3 +405,9 @@ body {
     transform: translateY(0);
   }
 }
+
+@media screen and (max-width: 600px) {
+  .booking-container .attendance-grid {
+    grid-template-columns: 1fr;
+  }
+}
