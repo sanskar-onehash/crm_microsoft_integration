@@ -167,7 +167,7 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
   schedule_slot_handler() {
     const me = this;
     return function (values) {
-      frappe.msgprint("Creating Event Slots...");
+      const creatingMsg = frappe.msgprint("Creating Event Slots...");
       frappe.call({
         method:
           "crm_microsoft_integration.microsoft.doctype.outlook_event_slot.outlook_event_slot.create_slot",
@@ -179,6 +179,7 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
             me.slot_dialog.event_src_el.disabled = false;
             me.slot_dialog.hide();
             me.refresh();
+            creatingMsg.hide();
             frappe.show_alert({
               message: "Event slots created successfully.",
               indicator: "green",
