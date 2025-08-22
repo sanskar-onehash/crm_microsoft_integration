@@ -133,7 +133,7 @@ class OutlookEventSlot(WebsiteGenerator):
         # Propagating reschedule history
         event_doc_reschedules = len(event_doc.custom_outlook_reschedule_history or [])
         for reschedule_history in self.reschedule_history:
-            if reschedule_history.idx < event_doc_reschedules:
+            if reschedule_history.idx <= event_doc_reschedules:
                 continue
             event_doc.append(
                 "custom_outlook_reschedule_history",
