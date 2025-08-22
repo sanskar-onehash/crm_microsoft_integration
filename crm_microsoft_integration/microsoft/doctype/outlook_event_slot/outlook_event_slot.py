@@ -16,7 +16,7 @@ WEEK_FIELDS = [
     "sunday",
 ]
 
-MEETING_MODE_TAGS = {"ONLINE": " - Online", "IN_PERSON": "In Person"}
+MEETING_MODE_TAGS = {"ONLINE": " - Online", "IN_PERSON": " - In Person"}
 
 
 class OutlookEventSlot(WebsiteGenerator):
@@ -71,7 +71,7 @@ class OutlookEventSlot(WebsiteGenerator):
             commit=True,
         )
 
-    def confirm(self, slot_id, online=True, ignore_permissions=False):
+    def confirm(self, slot_id, online, ignore_permissions=False):
         if self.selected_slot_start:
             frappe.throw("Event is already scheduled.")
 
@@ -140,7 +140,7 @@ class OutlookEventSlot(WebsiteGenerator):
                 {
                     "starts_on": reschedule_history.starts_on,
                     "ends_on": reschedule_history.ends_on,
-                    "outlook_slot": reschedule_history.custom_outlook_from_slot,
+                    "outlook_slot": reschedule_history.outlook_slot,
                     "rescheduled_by": reschedule_history.rescheduled_by,
                     "rescheduled_on": reschedule_history.rescheduled_on,
                     "reschedule_reason": reschedule_history.reschedule_reason,
@@ -207,10 +207,10 @@ def create_slot(doc):
 
 
 @frappe.whitelist(allow_guest=True)
-def confirm_slot(slot_id, mode_online=True):
+def confirm_slot(slot_id, mode_online):
     slot_name = frappe.db.get_value("Outlook Slot Proposals", slot_id, "parent")
     slot_doc = frappe.get_doc("Outlook Event Slot", slot_name)
-    slot_doc.confirm(slot_id, mode_online, True)
+    slot_doc.confirm(slot_id, frappe.parse_json(mode_online), True)
 
 
 @frappe.whitelist()
@@ -331,7 +331,7 @@ def reschedule_event_slots(event_type, event_name, new_slots, reschedule_reason)
                     {
                         "starts_on": ev_res_history.starts_on,
                         "ends_on": ev_res_history.ends_on,
-                        "outlook_slot": ev_res_history.custom_outlook_from_slot,
+                        "outlook_slot": ev_res_history.outlook_slot,
                         "rescheduled_by": ev_res_history.rescheduled_by,
                         "rescheduled_on": ev_res_history.rescheduled_on,
                         "reschedule_reason": reschedule_reason,
