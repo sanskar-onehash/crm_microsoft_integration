@@ -223,6 +223,24 @@ def reschedule_event_slots(event_type, event_name, new_slots):
         old_slot_doc = frappe.get_doc(
             "Outlook Event Slot", event_doc.custom_outlook_from_slot
         )
+        event_participants = []
+        users = []
+        for event_participant in event_doc.event_participants:
+            if event_participant.reference_doctype == "User":
+                users.append({"user": event_participant.reference_docname})
+            else:
+                event_participants.append(
+                    {
+                        "reference_doctype": event_participant.reference_doctype,
+                        "reference_docname": event_participant.reference_docname,
+                        "email": event_participant.email,
+                        "custom_participant_name": event_participant.custom_participant_name,
+                        "custom_response": event_participant.custom_response,
+                        "custom_response_time": event_participant.custom_response_time,
+                        "custom_required": event_participant.custom_required,
+                    }
+                )
+
         event_slot_doc = frappe.get_doc(
             {
                 "doctype": "Outlook Event Slot",
@@ -236,18 +254,8 @@ def reschedule_event_slots(event_type, event_name, new_slots):
                     }
                     for ev_res_history in event_doc.custom_outlook_reschedule_history
                 ],
-                "event_participants": [
-                    {
-                        "reference_doctype": event_participant.reference_doctype,
-                        "reference_docname": event_participant.reference_docname,
-                        "email": event_participant.email,
-                        "custom_participant_name": event_participant.custom_participant_name,
-                        "custom_response": event_participant.custom_response,
-                        "custom_response_time": event_participant.custom_response_time,
-                        "custom_required": event_participant.custom_required,
-                    }
-                    for event_participant in event_doc.event_participants
-                ],
+                "event_participants": event_participants,
+                "users": users,
                 "slot_proposals": new_slots,
                 "status": "Unconfirmed",
                 "outlook_calendar": event_doc.custom_outlook_calendar,
