@@ -154,7 +154,7 @@
    "link_fieldname": "custom_outlook_calendar"
   }
  ],
- "modified": "2025-08-12 23:51:01.514444",
+ "modified": "2025-08-22 17:11:40.045363",
  "modified_by": "Administrator",
  "module": "Microsoft",
  "name": "Outlook Calendar",
@@ -173,6 +173,7 @@
    "write": 1
   }
  ],
+ "search_fields": "user,owner_name,owner_email",
  "show_title_field_in_link": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
