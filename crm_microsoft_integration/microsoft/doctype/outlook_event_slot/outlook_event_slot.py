@@ -118,16 +118,14 @@ class OutlookEventSlot(WebsiteGenerator):
                 )
 
         for user in self.users:
-            ms_user_doc = frappe.get_doc("Microsoft User", user.microsoft_user)
+            user_doc = frappe.get_doc("User", user.user)
             event_doc.append(
                 "event_participants",
                 {
-                    "reference_doctype": ms_user_doc.doctype,
-                    "reference_docname": ms_user_doc.name,
-                    "email": ms_user_doc.mail
-                    or ms_user_doc.user
-                    or ms_user_doc.principal_name,
-                    "custom_participant_name": ms_user_doc.display_name,
+                    "reference_doctype": user_doc.doctype,
+                    "reference_docname": user_doc.name,
+                    "email": user_doc.mail,
+                    "custom_participant_name": user_doc.full_name,
                 },
             )
 

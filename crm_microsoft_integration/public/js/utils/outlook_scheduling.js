@@ -112,43 +112,28 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
   }
 
   handle_group_change() {
-    const me = this;
-    return function () {
-      const group_value = me.slot_dialog.get_value("user_group");
+    let me = this;
+    const group_value = me.slot_dialog.get_value("user_group");
+    if (group_value) {
+      frappe.db
+        .get_list("User Group Member", {
+          parent_doctype: "User Group",
+          filters: { parent: user_group },
+          fields: ["user"],
+        })
+        .then((group_members) => {
+          const updated_value = me.slot_dialog.get_value("users");
+          const old_users = updated_value.map((user) => user.user);
 
-      if (group_value) {
-        frappe.call({
-          method:
-            "crm_microsoft_integration.microsoft.doctype.microsoft_group.microsoft_group.get_group_users",
-          args: {
-            group_name: group_value,
-          },
-          callback: async function (res) {
-            if (!res.exc) {
-              const group_users = res.message;
-              const updated_value = me.slot_dialog.get_value("users");
-              const old_users = updated_value.map(
-                (user) => user.microsoft_user,
-              );
-
-              for (let group_user of group_users) {
-                if (!old_users.includes(group_user)) {
-                  frappe.utils.get_link_title("Microsoft User", group_user) ||
-                    (await frappe.utils.fetch_link_title(
-                      "Microsoft User",
-                      group_user,
-                    ));
-                  updated_value.push({ microsoft_user: group_user });
-                }
-              }
-
-              me.slot_dialog.set_value("users", updated_value);
-              me.slot_dialog.set_value("user_group", "");
+          for (let group_user of group_members) {
+            if (!old_users.includes(group_user)) {
+              updated_value.push({ user: group_user });
             }
-          },
+          }
+          me.slot_dialog.set_value("users", updated_value);
+          me.slot_dialog.set_value("user_group", "");
         });
-      }
-    };
+    }
   }
 
   reschedule_slot_handler(event_idx) {
@@ -348,14 +333,14 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
         fieldname: "user_group",
         fieldtype: "Link",
         label: "User Group",
-        options: "Microsoft Group",
-        onchange: this.handle_group_change(),
+        options: "User Group",
+        onchange: () => this.handle_group_change(),
       },
       {
         fieldname: "users",
         fieldtype: "Table MultiSelect",
         label: "Users",
-        options: "Microsoft Users",
+        options: "User Group Member",
       },
       {
         fieldname: "section_break_3",
