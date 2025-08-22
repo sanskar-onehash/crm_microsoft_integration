@@ -118,7 +118,7 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
       frappe.db
         .get_list("User Group Member", {
           parent_doctype: "User Group",
-          filters: { parent: user_group },
+          filters: { parent: group_value },
           fields: ["user"],
         })
         .then((group_members) => {
@@ -126,8 +126,8 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
           const old_users = updated_value.map((user) => user.user);
 
           for (let group_user of group_members) {
-            if (!old_users.includes(group_user)) {
-              updated_value.push({ user: group_user });
+            if (!old_users.includes(group_user.user)) {
+              updated_value.push({ user: group_user.user });
             }
           }
           me.slot_dialog.set_value("users", updated_value);
@@ -282,7 +282,7 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
         reqd: 1,
       },
       {
-        default: "0",
+        default: "1",
         fieldname: "add_teams_meet",
         fieldtype: "Check",
         label: "Add Teams Meet",

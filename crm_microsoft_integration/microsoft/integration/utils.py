@@ -17,10 +17,14 @@ def prepare_headers(headers=None, auth=True):
     return headers
 
 
-def make_get_request(base_uri, endpoint, auth=True, params=None, headers=None):
+def make_get_request(
+    base_uri, endpoint, auth=True, params=None, headers=None, url=None
+):
     headers = prepare_headers(headers, auth)
 
-    res = requests.get(f"{base_uri}{endpoint}", params=params, headers=headers)
+    res = requests.get(
+        f"{url if url else base_uri + endpoint}", params=params, headers=headers
+    )
     res.raise_for_status()
 
     return res.json()

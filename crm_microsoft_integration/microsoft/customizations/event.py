@@ -54,8 +54,11 @@ def event_on_update(doc, method=None):
     ):
         return
 
-    if doc.custom_sync_with_ms_calendar and not doc.custom_outlook_event_id:
+    if doc.custom_sync_with_ms_calendar and (
+        not doc.custom_outlook_event_id or doc.get_db_value("status") == "Cancelled"
+    ):
         # If custom_sync_with_ms_calendar is checked later, then insert the event rather than updating it.
+        # Or if event was previously cancelled
         event_after_insert(doc)
         return
 
@@ -263,9 +266,9 @@ def check_and_set_participants_updates_to_db(
                     "parenttype": event_doc.doctype,
                     "parentfield": "custom_outlook_participants",
                     "idx": next_outlook_idx,
-                    **outlook_participants,
+                    **new_participant,
                 }
-            ).save()
+            ).save(ignore_permissions=True)
             next_outlook_idx += 1
 
 

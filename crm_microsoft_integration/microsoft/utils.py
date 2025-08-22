@@ -52,6 +52,7 @@ def get_reference_events(ref_doctype, ref_docname):
             Event.custom_outlook_meeting_link.as_("meeting_link"),
             Event.starts_on,
             Event.ends_on,
+            Event.status.as_("event_status"),
         )
         .where(
             (EventParticipants.reference_doctype == ref_doctype)
@@ -91,6 +92,8 @@ def get_reference_events(ref_doctype, ref_docname):
     last_event = None
     for event in events:
         if event.type == "Outlook Event Slot" and event.status == "Confirmed":
+            continue
+        if event.type == "Event" and event.event_status == "Cancelled":
             continue
 
         if (
@@ -136,4 +139,6 @@ def get_reference_events(ref_doctype, ref_docname):
         }
         if participant not in last_event["participants"]:
             last_event["participants"].append(participant)
+    if last_event and last_event not in grouped_events:
+        grouped_events.append(last_event)
     return {"events": grouped_events, "have_upcoming_events": have_upcoming_events}

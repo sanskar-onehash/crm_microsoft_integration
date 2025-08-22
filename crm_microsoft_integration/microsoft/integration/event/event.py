@@ -58,4 +58,11 @@ def delete_cal_event(event_id, user_id, calendar_id=None):
 
 
 def cancel_cal_event(event_id, user_id, calendar_id=None):
-    api.cancel_user_event(event_id, user_id, calendar_id=calendar_id)
+    try:
+        api.cancel_user_event(event_id, user_id, calendar_id=calendar_id)
+    except HTTPError as e:
+        if e.response.status_code == 404:
+            # Prevent raise error if event already deleted
+            return "Event not found"
+        else:
+            raise e

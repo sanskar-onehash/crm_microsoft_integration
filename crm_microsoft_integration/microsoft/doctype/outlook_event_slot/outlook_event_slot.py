@@ -124,7 +124,7 @@ class OutlookEventSlot(WebsiteGenerator):
                 {
                     "reference_doctype": user_doc.doctype,
                     "reference_docname": user_doc.name,
-                    "email": user_doc.mail,
+                    "email": user_doc.email,
                     "custom_participant_name": user_doc.full_name,
                 },
             )

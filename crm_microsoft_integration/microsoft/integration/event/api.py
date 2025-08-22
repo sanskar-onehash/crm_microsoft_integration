@@ -64,4 +64,6 @@ def cancel_user_event(
 
     events_endpoint += EVENTS_ENDPOINT + f"/{event_id}/cancel"
 
-    return utils.make_post_request(config.GRAPH_BASE_URI, events_endpoint)
+    return utils.make_post_request(
+        config.GRAPH_BASE_URI, events_endpoint, json={"comment": ""}
+    )
