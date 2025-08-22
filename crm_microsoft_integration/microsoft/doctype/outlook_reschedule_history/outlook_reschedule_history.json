@@ -10,7 +10,8 @@
   "ends_on",
   "outlook_slot",
   "rescheduled_by",
-  "rescheduled_on"
+  "rescheduled_on",
+  "reschedule_reason"
  ],
  "fields": [
   {
@@ -49,12 +50,18 @@
    "label": "Rescheduled On",
    "read_only": 1,
    "reqd": 1
+  },
+  {
+   "fieldname": "reschedule_reason",
+   "fieldtype": "Small Text",
+   "label": "Reschedule Reason",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-08-21 13:33:49.040102",
+ "modified": "2025-08-22 14:16:33.046747",
  "modified_by": "Administrator",
  "module": "Microsoft",
  "name": "Outlook Reschedule History",

@@ -78,7 +78,9 @@
         </div>
         {% } %} {% if (event.starts_on) { %}
         <div class="event-slots">
-          <div>🕒 {{ event.starts_on }} → {{ event.ends_on }}</div>
+          <div class="{{ event.is_cancelled ? 'cancelled-slot' : '' }}">
+            🕒 {{ event.starts_on }} → {{ event.ends_on }}
+          </div>
         </div>
         {% } %} {% if (event.description) { %}
         <div class="event-description">{{ event.description }}</div>
@@ -102,7 +104,16 @@
           </div>
 
           <div class="event-footer-actions">
-            {% if (event.can_reschedule) { %}
+            {% if (event.can_cancel) { %}
+            <button
+              class="btn btn-sm btn-danger cancel-btn"
+              data-event="{{ event.name }}"
+              data-event-type="{{ event.type }}"
+              data-event-idx="{{ i }}"
+            >
+              Cancel
+            </button>
+            {% } %} {% if (event.can_reschedule) { %}
             <button
               class="btn btn-sm btn-warning reschedule-btn"
               data-event="{{ event.name }}"
@@ -282,6 +293,10 @@
     padding-left: 20px;
   }
 
+  .cancelled-slot {
+    text-decoration: line-through;
+  }
+
   /* --- Description --- */
   .event-description {
     font-size: 13px;
@@ -339,6 +354,11 @@
     justify-content: space-between;
     align-items: center;
     gap: 20px;
+  }
+
+  .event-footer-actions {
+    display: flex;
+    gap: 10px;
   }
 
   /* --- Empty State --- */

@@ -64,6 +64,7 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
     return function (e) {
       const closest_schedule_btn = e.target.closest(".schedule-btn");
       const closest_reschedule_btn = e.target.closest(".reschedule-btn");
+      const closest_cancel_btn = e.target.closest(".cancel-btn");
       const closest_edit_btn = e.target.closest(".edit-btn");
 
       if (closest_schedule_btn) {
@@ -78,6 +79,15 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
         //
       }
     };
+  }
+
+  handle_event_cancel(e, e_src, event_idx) {
+    e_src.disabled = true;
+    this.load_lib().then(async () => {
+      this.cancel_dialog = await this.get_cancel_dialog(event_idx);
+      this.cancel_dialog.event_src_el = e_src;
+      this.cancel_dialog.show();
+    });
   }
 
   handle_reschedule_event(e, e_src, event_idx) {
@@ -136,6 +146,35 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
     }
   }
 
+  event_cancel_handler(event_idx) {
+    const me = this;
+    const event = me.events_data.events[event_idx];
+    return function (values) {
+      const cancellingMsg = frappe.msgprint("Cancelling event...");
+      frappe.call({
+        method:
+          "crm_microsoft_integration.microsoft.doctype.outlook_event_slot.outlook_event_slot.cancel_event",
+        args: {
+          event_type: event.type,
+          event_name: event.name,
+          cancel_reason: values.cancel_reason,
+        },
+        callback: function (res) {
+          if (!res.exc) {
+            me.cancel_dialog.event_src_el.disabled = false;
+            me.cancel_dialog.hide();
+            me.refresh();
+            cancellingMsg.hide();
+            frappe.show_alert({
+              message: "Event Cancelled successfully",
+              indicator: "green",
+            });
+          }
+        },
+      });
+    };
+  }
+
   reschedule_slot_handler(event_idx) {
     const me = this;
     const event = me.events_data.events[event_idx];
@@ -148,6 +187,7 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
           event_type: event.type,
           event_name: event.name,
           new_slots: values.slot_proposals,
+          reschedule_reason: values.reschedule_reason,
         },
         callback: function (res) {
           if (!res.exc) {
@@ -203,6 +243,12 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
     };
   }
 
+  cancel_event_cancel() {
+    return () => {
+      this.cancel_dialog.event_src_el.disabled = false;
+    };
+  }
+
   async update_status(input_field, doctype) {
     let completed = $(input_field).prop("checked") ? 1 : 0;
     let docname = $(input_field).attr("name");
@@ -210,6 +256,26 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
       await frappe.db.set_value(doctype, docname, "status", "Closed");
       this.refresh();
     }
+  }
+
+  get_cancel_dialog(event_idx) {
+    const BTN_LABEL = "Cancel Event";
+    const fields = [
+      {
+        fieldname: "cancel_reason",
+        fieldtype: "Small Text",
+        label: "Cancel Reason",
+        reqd: 1,
+      },
+    ];
+    return new frappe.ui.Dialog({
+      title: "Cancel Event",
+      fields,
+      size: "small", // small, large, extra-large
+      primary_action_label: BTN_LABEL,
+      primary_action: this.event_cancel_handler(event_idx),
+      on_hide: this.cancel_event_cancel(),
+    });
   }
 
   async get_reschedule_dialog(event_idx) {
@@ -232,11 +298,17 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
         label: "Add Slot",
         click: this.add_slot_handler(),
       },
+      {
+        fieldname: "reschedule_reason",
+        fieldtype: "Small Text",
+        label: "Reschedule Reason",
+        reqd: 1,
+      },
     ];
     return new frappe.ui.Dialog({
-      title: "Schedule Event",
+      title: "Reschedule Event",
       fields,
-      size: "extra-large", // small, large, extra-large
+      size: "large", // small, large, extra-large
       primary_action_label: BTN_LABEL,
       primary_action: this.reschedule_slot_handler(event_idx),
       on_hide: this.cancel_slot_reschedule(),

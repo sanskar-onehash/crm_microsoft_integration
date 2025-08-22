@@ -16,6 +16,8 @@ WEEK_FIELDS = [
     "sunday",
 ]
 
+MEETING_MODE_TAGS = {"ONLINE": " - Online", "IN_PERSON": "In Person"}
+
 
 class OutlookEventSlot(WebsiteGenerator):
     website = frappe._dict(
@@ -117,6 +119,34 @@ class OutlookEventSlot(WebsiteGenerator):
                     },
                 )
 
+        # Subject updates to - Online or - In Person
+        subject = event_doc.subject or self.subject
+        for mode_tag in MEETING_MODE_TAGS:
+            if subject.endswith(MEETING_MODE_TAGS[mode_tag]):
+                subject = subject[: -len(MEETING_MODE_TAGS[mode_tag])]
+                break
+        if online:
+            subject = subject + MEETING_MODE_TAGS["ONLINE"]
+        else:
+            subject = subject + MEETING_MODE_TAGS["IN_PERSON"]
+
+        # Propagating reschedule history
+        event_doc_reschedules = len(event_doc.custom_outlook_reschedule_history or [])
+        for reschedule_history in self.reschedule_history:
+            if reschedule_history.idx < event_doc_reschedules:
+                continue
+            event_doc.append(
+                "custom_outlook_reschedule_history",
+                {
+                    "starts_on": reschedule_history.starts_on,
+                    "ends_on": reschedule_history.ends_on,
+                    "outlook_slot": reschedule_history.custom_outlook_from_slot,
+                    "rescheduled_by": reschedule_history.rescheduled_by,
+                    "rescheduled_on": reschedule_history.rescheduled_on,
+                    "reschedule_reason": reschedule_history.reschedule_reason,
+                },
+            )
+
         for user in self.users:
             user_doc = frappe.get_doc("User", user.user)
             event_doc.append(
@@ -133,7 +163,7 @@ class OutlookEventSlot(WebsiteGenerator):
             {
                 "starts_on": starts_on,
                 "ends_on": ends_on,
-                "subject": self.subject,
+                "subject": subject,
                 "description": self.description,
                 "color": self.color,
                 "repeat_this_event": self.repeat_this_event,
@@ -184,9 +214,58 @@ def confirm_slot(slot_id, mode_online=True):
 
 
 @frappe.whitelist()
-def reschedule_event_slots(event_type, event_name, new_slots):
+def cancel_event(event_type, event_name, cancel_reason):
     if event_type not in ["Event", "Outlook Event Slot"]:
         frappe.throw("Invalid event_type")
+    if not cancel_reason:
+        frappe.throw("Cancel Reason is mandatory.")
+
+    event_doc = frappe.get_doc(event_type, event_name)
+    now_datetime = utils.now_datetime()
+    if event_type == "Event":
+        if event_doc.status != "Open":
+            frappe.throw(f"Can not cancel `{event_doc.status}` event.")
+        if not event_doc.custom_sync_with_ms_calendar:
+            frappe.throw(
+                "Sync with Outlook if not enabled for the event, can not reschedule."
+            )
+
+        event_doc.set("status", "Cancelled")
+        event_doc.append(
+            "custom_outlook_reschedule_history",
+            {
+                "starts_on": event_doc.starts_on,
+                "ends_on": event_doc.ends_on,
+                "outlook_slot": event_doc.custom_outlook_from_slot,
+                "rescheduled_by": frappe.session.user,
+                "rescheduled_on": now_datetime,
+                "reschedule_reason": cancel_reason,
+            },
+        )
+        event_doc.save()
+    else:
+        if event_doc.docstatus.is_submitted():
+            frappe.throw("Event is already scheduled, can not cancel slots.")
+        if event_doc.docstatus.is_cancelled():
+            frappe.throw("Outlook Event Slot doc is cancelled, can not continue.")
+
+        event_doc.append(
+            "slot_reschedule_history",
+            {
+                "rescheduled_by": frappe.session.user,
+                "rescheduled_on": now_datetime,
+                "reschedule_reason": cancel_reason,
+            },
+        )
+        event_doc.save()
+
+
+@frappe.whitelist()
+def reschedule_event_slots(event_type, event_name, new_slots, reschedule_reason):
+    if event_type not in ["Event", "Outlook Event Slot"]:
+        frappe.throw("Invalid event_type")
+    if not reschedule_reason:
+        frappe.throw("Reschedule Reason is mandatory.")
 
     if isinstance(new_slots, str):
         new_slots = utils.json.loads(new_slots)
@@ -217,6 +296,7 @@ def reschedule_event_slots(event_type, event_name, new_slots):
                 "outlook_slot": event_doc.custom_outlook_from_slot,
                 "rescheduled_by": frappe.session.user,
                 "rescheduled_on": now_datetime,
+                "reschedule_reason": reschedule_reason,
             },
         )
 
@@ -249,8 +329,12 @@ def reschedule_event_slots(event_type, event_name, new_slots):
                 "email_template": old_slot_doc.email_template,
                 "reschedule_history": [
                     {
+                        "starts_on": ev_res_history.starts_on,
+                        "ends_on": ev_res_history.ends_on,
+                        "outlook_slot": ev_res_history.custom_outlook_from_slot,
                         "rescheduled_by": ev_res_history.rescheduled_by,
                         "rescheduled_on": ev_res_history.rescheduled_on,
+                        "reschedule_reason": reschedule_reason,
                     }
                     for ev_res_history in event_doc.custom_outlook_reschedule_history
                 ],
@@ -262,8 +346,10 @@ def reschedule_event_slots(event_type, event_name, new_slots):
                 "organiser": event_doc.custom_outlook_organiser,
                 "organiser_name": event_doc.custom_outlook_organiser_name,
                 "color": event_doc.color,
-                "event_location": event_doc.custom_outlook_location,
-                "add_teams_meet": event_doc.custom_add_teams_meet,
+                "event_location": event_doc.custom_outlook_location
+                or old_slot_doc.event_location,
+                "add_teams_meet": event_doc.custom_add_teams_meet
+                or old_slot_doc.add_teams_meet,
                 "all_day": event_doc.all_day,
                 "repeat_this_event": event_doc.repeat_this_event,
                 "repeat_on": event_doc.repeat_on,
@@ -285,7 +371,11 @@ def reschedule_event_slots(event_type, event_name, new_slots):
 
         event_doc.set("slot_proposals", new_slots)
         event_doc.append(
-            "reschedule_history",
-            {"rescheduled_by": frappe.session.user, "rescheduled_on": now_datetime},
+            "slot_reschedule_history",
+            {
+                "rescheduled_by": frappe.session.user,
+                "rescheduled_on": now_datetime,
+                "reschedule_reason": reschedule_reason,
+            },
         )
         event_doc.save()

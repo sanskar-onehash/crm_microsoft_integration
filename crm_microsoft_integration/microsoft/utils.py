@@ -63,6 +63,7 @@ def get_reference_events(ref_doctype, ref_docname):
         .orderby("creation", order=Order.desc)
     ).run(as_dict=True)
 
+    # Slot Proposals
     event_slots = {
         event.name
         for event in events
@@ -93,8 +94,6 @@ def get_reference_events(ref_doctype, ref_docname):
     for event in events:
         if event.type == "Outlook Event Slot" and event.status == "Confirmed":
             continue
-        if event.type == "Event" and event.event_status == "Cancelled":
-            continue
 
         if (
             not have_upcoming_events
@@ -108,6 +107,11 @@ def get_reference_events(ref_doctype, ref_docname):
             last_event = None
 
         if not last_event:
+            is_cancelled = event.event_status and event.event_status == "Cancelled"
+            can_reschedule = not is_cancelled and (
+                event.starts_on > now_datetime if event.starts_on else True
+            )  # True for slots
+            can_cancel = can_reschedule or event.event_status == "Open"
             last_event = {
                 "type": event.type,
                 "name": event.name,
@@ -122,9 +126,9 @@ def get_reference_events(ref_doctype, ref_docname):
                 "creation": event.creation,
                 "participants": [],
                 # TODO: There can be an offset limit for rescheduling
-                "can_reschedule": (
-                    event.starts_on > now_datetime if event.starts_on else True
-                ),  # True for slots
+                "can_reschedule": can_reschedule,
+                "can_cancel": can_cancel,
+                "is_cancelled": is_cancelled,
             }
 
             if event.type == "Outlook Event Slot":

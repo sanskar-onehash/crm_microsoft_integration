@@ -56,7 +56,12 @@ def delete_user_event(
 
 
 def cancel_user_event(
-    event_id, user_id, calendar_events=False, calendar_id=None, group_id=None
+    event_id,
+    user_id,
+    cancellation_reason,
+    calendar_events=False,
+    calendar_id=None,
+    group_id=None,
 ):
     events_endpoint = f"{ENDPOINT_BASE}/{user_id}"
     if calendar_id or calendar_events:
@@ -65,5 +70,7 @@ def cancel_user_event(
     events_endpoint += EVENTS_ENDPOINT + f"/{event_id}/cancel"
 
     return utils.make_post_request(
-        config.GRAPH_BASE_URI, events_endpoint, json={"comment": ""}
+        config.GRAPH_BASE_URI,
+        events_endpoint,
+        json={"comment": cancellation_reason or ""},
     )

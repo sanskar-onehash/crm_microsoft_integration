@@ -54,8 +54,11 @@ def event_on_update(doc, method=None):
     ):
         return
 
+    old_doc = doc.get_doc_before_save()
+
     if doc.custom_sync_with_ms_calendar and (
-        not doc.custom_outlook_event_id or doc.get_db_value("status") == "Cancelled"
+        not doc.custom_outlook_event_id
+        or (old_doc.status == "Cancelled" and doc.status != "Cancelled")
     ):
         # If custom_sync_with_ms_calendar is checked later, then insert the event rather than updating it.
         # Or if event was previously cancelled
@@ -67,9 +70,15 @@ def event_on_update(doc, method=None):
         return
 
     if doc.status == "Cancelled":
+        if not len(event.reschedule_history):
+            frappe.throw("Reschedule history not maintained")
+        cancellation_reason = event.reschedule_history[
+            len(event.reschedule_history) - 1
+        ].reschedule_reason
         event.cancel_cal_event(
             doc.custom_outlook_event_id,
             doc.custom_outlook_organiser,
+            cancellation_reason,
             outlook_calendar.id,
         )
     else:
