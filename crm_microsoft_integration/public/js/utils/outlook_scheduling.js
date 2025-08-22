@@ -75,6 +75,12 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
           closest_reschedule_btn,
           +e.target.dataset.eventIdx,
         );
+      } else if (closest_cancel_btn) {
+        me.handle_event_cancel(
+          e,
+          closest_cancel_btn,
+          +e.target.dataset.eventIdx,
+        );
       } else if (closest_edit_btn) {
         //
       }
