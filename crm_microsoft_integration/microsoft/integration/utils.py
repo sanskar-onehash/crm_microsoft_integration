@@ -27,7 +27,8 @@ def make_get_request(
     )
     res.raise_for_status()
 
-    return res.json()
+    if res.text:
+        return res.json()
 
 
 def make_post_request(
@@ -44,7 +45,8 @@ def make_post_request(
     )
     res.raise_for_status()
 
-    return res.json()
+    if res.text:
+        return res.json()
 
 
 def make_patch_request(
@@ -61,7 +63,8 @@ def make_patch_request(
     )
     res.raise_for_status()
 
-    return res.json()
+    if res.text:
+        return res.json()
 
 
 def make_delete_request(
@@ -78,7 +81,8 @@ def make_delete_request(
     )
     res.raise_for_status()
 
-    return res
+    if res.text:
+        return res
 
 
 def get_redirect_uri():
