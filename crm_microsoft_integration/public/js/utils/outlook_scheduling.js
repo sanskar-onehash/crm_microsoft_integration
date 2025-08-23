@@ -264,6 +264,31 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
     }
   }
 
+  handle_slot_email_template() {
+    if (!this.set_email_template_subject) {
+      return;
+    }
+    if (
+      this.slot_dialog.get_value("subject") &&
+      !this.force_email_template_subject
+    ) {
+      return;
+    }
+
+    const email_template = this.slot_dialog.get_value("email_template");
+    if (!email_template) {
+      return;
+    }
+
+    frappe.db
+      .get_value("Email Template", email_template, "subject")
+      .then((subject_res) => {
+        if (subject_res.message?.subject) {
+          this.slot_dialog.set_value("subject", subject_res.message.subject);
+        }
+      });
+  }
+
   get_cancel_dialog(event_idx) {
     const BTN_LABEL = "Cancel Event";
     const fields = [
@@ -329,6 +354,7 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
         fieldtype: "Link",
         fieldname: "email_template",
         options: "Email Template",
+        change: () => this.handle_slot_email_template(),
       },
       {
         label: "Subject",
