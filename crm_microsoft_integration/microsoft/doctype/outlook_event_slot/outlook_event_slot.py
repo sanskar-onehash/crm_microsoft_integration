@@ -5,6 +5,7 @@ import frappe
 from frappe import utils
 from frappe.model.document import DocStatus
 from frappe.website.website_generator import WebsiteGenerator
+from crm_microsoft_integration.microsoft.customizations import event
 
 WEEK_FIELDS = [
     "monday",
@@ -63,6 +64,12 @@ class OutlookEventSlot(WebsiteGenerator):
             if not chosen_week_day:
                 frappe.throw("Choose one or more week day/s to repeat on")
 
+    def validate_slots(self):
+        pass
+
+    def before_insert(self):
+        self.validate_slots()
+
     def after_insert(self):
         self.db_set(
             {"route": f"slots/{self.name}", "published": 1},
@@ -71,7 +78,7 @@ class OutlookEventSlot(WebsiteGenerator):
             commit=True,
         )
 
-    def confirm(self, slot_id, online, ignore_permissions=False):
+    def confirm_event(self, slot_id, online, ignore_permissions=False):
         if self.selected_slot_start:
             frappe.throw("Event is already scheduled.")
 
@@ -197,6 +204,41 @@ class OutlookEventSlot(WebsiteGenerator):
         )
         self.save(ignore_permissions=True)
 
+    def reschedule_event(self, new_slots, reschedule_reason):
+        now_datetime = utils.now_datetime()
+
+        if self.docstatus.is_submitted():
+            frappe.throw("Event is already scheduled, can not update slots.")
+        if self.docstatus.is_cancelled():
+            frappe.throw("Outlook Event Slot doc is cancelled, can not continue.")
+
+        self.set("slot_proposals", new_slots)
+        self.append(
+            "slot_reschedule_history",
+            {
+                "rescheduled_by": frappe.session.user,
+                "rescheduled_on": now_datetime,
+                "reschedule_reason": reschedule_reason,
+            },
+        )
+
+    def cancel_event(self, cancel_reason):
+        now_datetime = utils.now_datetime()
+
+        if self.docstatus.is_submitted():
+            frappe.throw("Event is already scheduled, can not cancel slots.")
+        if self.docstatus.is_cancelled():
+            frappe.throw("Outlook Event Slot doc is cancelled, can not continue.")
+
+        self.append(
+            "slot_reschedule_history",
+            {
+                "rescheduled_by": frappe.session.user,
+                "rescheduled_on": now_datetime,
+                "reschedule_reason": cancel_reason,
+            },
+        )
+
 
 @frappe.whitelist()
 def create_slot(doc):
@@ -210,7 +252,7 @@ def create_slot(doc):
 def confirm_slot(slot_id, mode_online):
     slot_name = frappe.db.get_value("Outlook Slot Proposals", slot_id, "parent")
     slot_doc = frappe.get_doc("Outlook Event Slot", slot_name)
-    slot_doc.confirm(slot_id, frappe.parse_json(mode_online), True)
+    slot_doc.confirm_event(slot_id, frappe.parse_json(mode_online), True)
 
 
 @frappe.whitelist()
@@ -221,43 +263,11 @@ def cancel_event(event_type, event_name, cancel_reason):
         frappe.throw("Cancel Reason is mandatory.")
 
     event_doc = frappe.get_doc(event_type, event_name)
-    now_datetime = utils.now_datetime()
     if event_type == "Event":
-        if event_doc.status != "Open":
-            frappe.throw(f"Can not cancel `{event_doc.status}` event.")
-        if not event_doc.custom_sync_with_ms_calendar:
-            frappe.throw(
-                "Sync with Outlook if not enabled for the event, can not reschedule."
-            )
-
-        event_doc.set("status", "Cancelled")
-        event_doc.append(
-            "custom_outlook_reschedule_history",
-            {
-                "starts_on": event_doc.starts_on,
-                "ends_on": event_doc.ends_on,
-                "outlook_slot": event_doc.custom_outlook_from_slot,
-                "rescheduled_by": frappe.session.user,
-                "rescheduled_on": now_datetime,
-                "reschedule_reason": cancel_reason,
-            },
-        )
-        event_doc.save()
+        event.cancel_event(event_doc, cancel_reason)
     else:
-        if event_doc.docstatus.is_submitted():
-            frappe.throw("Event is already scheduled, can not cancel slots.")
-        if event_doc.docstatus.is_cancelled():
-            frappe.throw("Outlook Event Slot doc is cancelled, can not continue.")
-
-        event_doc.append(
-            "slot_reschedule_history",
-            {
-                "rescheduled_by": frappe.session.user,
-                "rescheduled_on": now_datetime,
-                "reschedule_reason": cancel_reason,
-            },
-        )
-        event_doc.save()
+        event_doc.cancel_event(cancel_reason)
+    event_doc.save()
 
 
 @frappe.whitelist()
@@ -278,104 +288,8 @@ def reschedule_event_slots(event_type, event_name, new_slots, reschedule_reason)
             frappe.throw("Invalid new_slots")
 
     event_doc = frappe.get_doc(event_type, event_name)
-    now_datetime = utils.now_datetime()
     if event_type == "Event":
-        if event_doc.status != "Open":
-            frappe.throw(f"Can not reschedule `{event_doc.status}` event.")
-        if not event_doc.custom_sync_with_ms_calendar:
-            frappe.throw(
-                "Sync with Outlook if not enabled for the event, can not reschedule."
-            )
-
-        event_doc.set("status", "Cancelled")
-        event_doc.append(
-            "custom_outlook_reschedule_history",
-            {
-                "starts_on": event_doc.starts_on,
-                "ends_on": event_doc.ends_on,
-                "outlook_slot": event_doc.custom_outlook_from_slot,
-                "rescheduled_by": frappe.session.user,
-                "rescheduled_on": now_datetime,
-                "reschedule_reason": reschedule_reason,
-            },
-        )
-
-        old_slot_doc = frappe.get_doc(
-            "Outlook Event Slot", event_doc.custom_outlook_from_slot
-        )
-        event_participants = []
-        users = []
-        for event_participant in event_doc.event_participants:
-            if event_participant.reference_doctype == "User":
-                users.append({"user": event_participant.reference_docname})
-            else:
-                event_participants.append(
-                    {
-                        "reference_doctype": event_participant.reference_doctype,
-                        "reference_docname": event_participant.reference_docname,
-                        "email": event_participant.email,
-                        "custom_participant_name": event_participant.custom_participant_name,
-                        "custom_response": event_participant.custom_response,
-                        "custom_response_time": event_participant.custom_response_time,
-                        "custom_required": event_participant.custom_required,
-                    }
-                )
-
-        event_slot_doc = frappe.get_doc(
-            {
-                "doctype": "Outlook Event Slot",
-                "subject": event_doc.subject,
-                "description": event_doc.description,
-                "email_template": old_slot_doc.email_template,
-                "reschedule_history": [
-                    {
-                        "starts_on": ev_res_history.starts_on,
-                        "ends_on": ev_res_history.ends_on,
-                        "outlook_slot": ev_res_history.outlook_slot,
-                        "rescheduled_by": ev_res_history.rescheduled_by,
-                        "rescheduled_on": ev_res_history.rescheduled_on,
-                        "reschedule_reason": reschedule_reason,
-                    }
-                    for ev_res_history in event_doc.custom_outlook_reschedule_history
-                ],
-                "event_participants": event_participants,
-                "users": users,
-                "slot_proposals": new_slots,
-                "status": "Unconfirmed",
-                "outlook_calendar": event_doc.custom_outlook_calendar,
-                "organiser": event_doc.custom_outlook_organiser,
-                "organiser_name": event_doc.custom_outlook_organiser_name,
-                "color": event_doc.color,
-                "event_location": event_doc.custom_outlook_location
-                or old_slot_doc.event_location,
-                "add_teams_meet": event_doc.custom_add_teams_meet
-                or old_slot_doc.add_teams_meet,
-                "all_day": event_doc.all_day,
-                "repeat_this_event": event_doc.repeat_this_event,
-                "repeat_on": event_doc.repeat_on,
-                "repeat_till": event_doc.repeat_till,
-            }
-        )
-        for week_field in WEEK_FIELDS:
-            if event_doc.get(week_field):
-                event_slot_doc.set(week_field, True)
-        event_slot_doc = event_slot_doc.save()
-
-        event_doc.set("custom_outlook_from_slot", event_slot_doc.name)
-        event_doc.save()
+        event.rescheudle_event(event_doc, new_slots, reschedule_reason)
     else:
-        if event_doc.docstatus.is_submitted():
-            frappe.throw("Event is already scheduled, can not update slots.")
-        if event_doc.docstatus.is_cancelled():
-            frappe.throw("Outlook Event Slot doc is cancelled, can not continue.")
-
-        event_doc.set("slot_proposals", new_slots)
-        event_doc.append(
-            "slot_reschedule_history",
-            {
-                "rescheduled_by": frappe.session.user,
-                "rescheduled_on": now_datetime,
-                "reschedule_reason": reschedule_reason,
-            },
-        )
-        event_doc.save()
+        event_doc.reschedule_event(new_slots, reschedule_reason)
+    event_doc.save()

@@ -6,6 +6,16 @@ SYNC_OUTLOOK_EVENT_TIMEOUT = 25 * 60
 SYNC_OUTLOOK_EVENT_JOB_NAME = "sync_outlook_events"
 SYNC_OUTLOOK_EVENT_PROGRESS_ID = "sync_outlook_events_progress"
 
+WEEK_FIELDS = [
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+    "sunday",
+]
+
 
 def event_after_insert(doc, method=None):
     if (
@@ -130,6 +140,110 @@ def event_on_trash(doc, method=None):
             alert=True,
             indicator="yellow",
         )
+
+
+def cancel_event(doc, cancel_reason):
+    if doc.status != "Open":
+        frappe.throw(f"Can not cancel `{doc.status}` event.")
+    if not doc.custom_sync_with_ms_calendar:
+        frappe.throw(
+            "Sync with Outlook if not enabled for the event, can not reschedule."
+        )
+
+    doc.set("status", "Cancelled")
+    doc.append(
+        "custom_outlook_reschedule_history",
+        {
+            "starts_on": doc.starts_on,
+            "ends_on": doc.ends_on,
+            "outlook_slot": doc.custom_outlook_from_slot,
+            "rescheduled_by": frappe.session.user,
+            "rescheduled_on": utils.now_datetime(),
+            "reschedule_reason": cancel_reason,
+        },
+    )
+
+
+def rescheudle_event(doc, new_slots, reschedule_reason):
+    if doc.status != "Open":
+        frappe.throw(f"Can not reschedule `{doc.status}` event.")
+    if not doc.custom_sync_with_ms_calendar:
+        frappe.throw(
+            "Sync with Outlook if not enabled for the event, can not reschedule."
+        )
+
+    doc.set("status", "Cancelled")
+    doc.append(
+        "custom_outlook_reschedule_history",
+        {
+            "starts_on": doc.starts_on,
+            "ends_on": doc.ends_on,
+            "outlook_slot": doc.custom_outlook_from_slot,
+            "rescheduled_by": frappe.session.user,
+            "rescheduled_on": utils.now_datetime(),
+            "reschedule_reason": reschedule_reason,
+        },
+    )
+
+    old_slot_doc = frappe.get_doc("Outlook Event Slot", doc.custom_outlook_from_slot)
+    event_participants = []
+    users = []
+    for event_participant in doc.event_participants:
+        if event_participant.reference_doctype == "User":
+            users.append({"user": event_participant.reference_docname})
+        else:
+            event_participants.append(
+                {
+                    "reference_doctype": event_participant.reference_doctype,
+                    "reference_docname": event_participant.reference_docname,
+                    "email": event_participant.email,
+                    "custom_participant_name": event_participant.custom_participant_name,
+                    "custom_response": event_participant.custom_response,
+                    "custom_response_time": event_participant.custom_response_time,
+                    "custom_required": event_participant.custom_required,
+                }
+            )
+
+    event_slot_doc = frappe.get_doc(
+        {
+            "doctype": "Outlook Event Slot",
+            "subject": doc.subject,
+            "description": doc.description,
+            "email_template": old_slot_doc.email_template,
+            "reschedule_history": [
+                {
+                    "starts_on": ev_res_history.starts_on,
+                    "ends_on": ev_res_history.ends_on,
+                    "outlook_slot": ev_res_history.outlook_slot,
+                    "rescheduled_by": ev_res_history.rescheduled_by,
+                    "rescheduled_on": ev_res_history.rescheduled_on,
+                    "reschedule_reason": reschedule_reason,
+                }
+                for ev_res_history in doc.custom_outlook_reschedule_history
+            ],
+            "event_participants": event_participants,
+            "users": users,
+            "slot_proposals": new_slots,
+            "status": "Unconfirmed",
+            "outlook_calendar": doc.custom_outlook_calendar,
+            "organiser": doc.custom_outlook_organiser,
+            "organiser_name": doc.custom_outlook_organiser_name,
+            "color": doc.color,
+            "event_location": doc.custom_outlook_location
+            or old_slot_doc.event_location,
+            "add_teams_meet": doc.custom_add_teams_meet or old_slot_doc.add_teams_meet,
+            "all_day": doc.all_day,
+            "repeat_this_event": doc.repeat_this_event,
+            "repeat_on": doc.repeat_on,
+            "repeat_till": doc.repeat_till,
+        }
+    )
+    for week_field in WEEK_FIELDS:
+        if doc.get(week_field):
+            event_slot_doc.set(week_field, True)
+    event_slot_doc = event_slot_doc.save()
+
+    doc.set("custom_outlook_from_slot", event_slot_doc.name)
 
 
 @frappe.whitelist()
