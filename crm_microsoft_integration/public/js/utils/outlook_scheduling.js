@@ -13,7 +13,11 @@ $.extend(microsoft.utils.outlook_scheduling, {
 
 microsoft.utils.OutlookScheduling = class OutlookScheduling {
   constructor(opts) {
-    $.extend(this, opts);
+    const defaults = {
+      set_email_template_subject: true,
+      force_email_template_subject: false,
+    };
+    $.extend(this, defaults, opts);
 
     this.form_wrapper = $(this.frm.wrapper);
   }
