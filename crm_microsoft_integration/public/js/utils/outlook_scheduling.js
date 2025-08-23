@@ -20,6 +20,32 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
     $.extend(this, defaults, opts);
 
     this.form_wrapper = $(this.frm.wrapper);
+    this.setup();
+  }
+
+  async setup() {
+    // Set current microsoft user
+    this.cur_microsoft_user =
+      (
+        await frappe.db.get_value(
+          "Microsoft User",
+          { user: frappe.session.user },
+          "name",
+        )
+      ).message?.name || "";
+
+    // Set default calendar for the user
+    this.cur_user_default_calendar =
+      (
+        await frappe.db.get_value(
+          "Outlook Calendar",
+          {
+            microsoft_user: this.cur_microsoft_user,
+            is_default_calendar: true,
+          },
+          "name",
+        )
+      ).message?.name || "";
   }
 
   refresh() {
@@ -382,6 +408,7 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
         fieldtype: "Link",
         fieldname: "outlook_calendar",
         options: "Outlook Calendar",
+        default: this.cur_user_default_calendar,
         reqd: 1,
       },
       {
@@ -390,6 +417,7 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
         fieldname: "organiser",
         options: "Microsoft User",
         reqd: 1,
+        default: this.cur_microsoft_user,
       },
       {
         default: "1",
