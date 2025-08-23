@@ -40,9 +40,11 @@ def _sync_ms_users():
         )
         existing_user = frappe.db.exists("Microsoft User", {"id": ms_user.get("id")})
 
+        user_doc = None
+        has_updated = False
+
         if existing_user:
             user_doc = frappe.get_doc("Microsoft User", existing_user)
-            has_updated = False
             for fieldname, new_value in ms_user.items():
                 old_value = user_doc.get(fieldname)
 
@@ -53,6 +55,17 @@ def _sync_ms_users():
             if has_updated:
                 user_doc.save()
         else:
-            # TODO: Find and link existing system user
-            frappe.get_doc({"doctype": "Microsoft User", **ms_user}).save()
+            has_updated = True
+            user_doc = frappe.get_doc({"doctype": "Microsoft User", **ms_user})
+
+        if not user_doc.user:
+            existing_system_user = frappe.db.exists(
+                "User", {"email": user_doc.mail or user_doc.principal_name}
+            )
+            if existing_system_user:
+                user_doc.set("user", existing_system_user)
+                has_updated = True
+
+        if has_updated:
+            user_doc.save()
     frappe.db.commit()
