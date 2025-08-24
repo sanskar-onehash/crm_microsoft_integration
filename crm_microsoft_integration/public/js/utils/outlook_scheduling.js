@@ -373,7 +373,6 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
         fieldname: "culumn_break_1",
       },
       {
-        default: "1",
         fieldname: "add_teams_meet",
         fieldtype: "Check",
         label: "Add Teams Meet",
