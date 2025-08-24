@@ -34,18 +34,20 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
         )
       ).message?.name || "";
 
-    // Set default calendar for the user
-    this.cur_user_default_calendar =
-      (
-        await frappe.db.get_value(
-          "Outlook Calendar",
-          {
-            microsoft_user: this.cur_microsoft_user,
-            is_default_calendar: true,
-          },
-          "name",
-        )
-      ).message?.name || "";
+    if (this.cur_microsoft_user) {
+      // Set default calendar for the user
+      this.cur_user_default_calendar =
+        (
+          await frappe.db.get_value(
+            "Outlook Calendar",
+            {
+              microsoft_user: this.cur_microsoft_user,
+              is_default_calendar: true,
+            },
+            "name",
+          )
+        ).message?.name || "";
+    }
   }
 
   refresh() {
