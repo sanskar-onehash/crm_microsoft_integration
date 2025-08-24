@@ -18,13 +18,7 @@ WEEK_FIELDS = [
 
 
 def event_after_insert(doc, method=None):
-    if (
-        not doc.custom_sync_with_ms_calendar
-        or doc.custom_is_outlook_event
-        or not frappe.db.exists(
-            "Outlook Calendar", {"name": doc.custom_outlook_calendar}
-        )
-    ):
+    if doc.custom_is_outlook_event or not doc.custom_sync_with_ms_calendar:
         return
 
     outlook_calendar = frappe.get_doc("Outlook Calendar", doc.custom_outlook_calendar)
@@ -54,13 +48,8 @@ def event_after_insert(doc, method=None):
 
 
 def event_on_update(doc, method=None):
-    if (
-        doc.is_new()
-        or not doc.custom_sync_with_ms_calendar
-        or doc.custom_is_outlook_event
-        or not frappe.db.exists(
-            "Outlook Calendar", {"name": doc.custom_outlook_calendar}
-        )
+    if doc.is_new() or not (
+        doc.custom_sync_with_ms_calendar or doc.custom_is_outlook_event
     ):
         return
 
