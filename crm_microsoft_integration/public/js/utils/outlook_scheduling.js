@@ -105,44 +105,53 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
         me.handle_reschedule_event(
           e,
           closest_reschedule_btn,
-          +e.target.dataset.eventIdx,
+          +closest_reschedule_btn.dataset.eventIdx,
         );
       } else if (closest_cancel_btn) {
         me.handle_event_cancel(
           e,
           closest_cancel_btn,
-          +e.target.dataset.eventIdx,
+          +closest_cancel_btn.dataset.eventIdx,
         );
       } else if (closest_edit_btn) {
-        //
+        me.handle_event_edit(
+          e,
+          closest_edit_btn,
+          +closest_edit_btn.dataset.eventIdx,
+        );
       }
     };
   }
 
-  handle_event_cancel(e, e_src, event_idx) {
+  async handle_event_edit(e, e_src, event_idx) {
     e_src.disabled = true;
-    this.load_lib().then(async () => {
-      this.cancel_dialog = await this.get_cancel_dialog(event_idx);
-      this.cancel_dialog.event_src_el = e_src;
-      this.cancel_dialog.show();
-    });
+    this.current_dialog = await this.get_edit_dialog(event_idx);
+    this.current_dialog.event_src_el = e_src;
+    this.current_dialog.show();
+  }
+
+  async handle_event_cancel(e, e_src, event_idx) {
+    e_src.disabled = true;
+    this.current_dialog = this.get_cancel_dialog(event_idx);
+    this.current_dialog.event_src_el = e_src;
+    this.current_dialog.show();
   }
 
   handle_reschedule_event(e, e_src, event_idx) {
     e_src.disabled = true;
     this.load_lib().then(async () => {
-      this.reschedule_dialog = await this.get_reschedule_dialog(event_idx);
-      this.reschedule_dialog.event_src_el = e_src;
-      this.reschedule_dialog.show();
+      this.current_dialog = await this.get_reschedule_dialog(event_idx);
+      this.current_dialog.event_src_el = e_src;
+      this.current_dialog.show();
     });
   }
 
   handle_schedule_event(e, e_src) {
     e_src.disabled = true;
     this.load_lib().then(async () => {
-      this.slot_dialog = await this.get_slot_dialog(this.default_data);
-      this.slot_dialog.event_src_el = e_src;
-      this.slot_dialog.show();
+      this.current_dialog = await this.get_slot_dialog(this.default_data);
+      this.current_dialog.event_src_el = e_src;
+      this.current_dialog.show();
     });
   }
 
@@ -161,7 +170,7 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
 
   handle_group_change() {
     let me = this;
-    const group_value = me.slot_dialog.get_value("user_group");
+    const group_value = me.current_dialog.get_value("user_group");
     if (group_value) {
       frappe.db
         .get_list("User Group Member", {
@@ -170,7 +179,7 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
           fields: ["user"],
         })
         .then((group_members) => {
-          const updated_value = me.slot_dialog.get_value("users");
+          const updated_value = me.current_dialog.get_value("users");
           const old_users = updated_value.map((user) => user.user);
 
           for (let group_user of group_members) {
@@ -178,10 +187,43 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
               updated_value.push({ user: group_user.user });
             }
           }
-          me.slot_dialog.set_value("users", updated_value);
-          me.slot_dialog.set_value("user_group", "");
+          me.current_dialog.set_value("users", updated_value);
+          me.current_dialog.set_value("user_group", "");
         });
     }
+  }
+
+  edit_event_handler(event) {
+    const me = this;
+    return function (values) {
+      const editingMsg = frappe.msgprint("Editing event...");
+      frappe.call({
+        method:
+          "crm_microsoft_integration.microsoft.doctype.outlook_event_slot.outlook_event_slot.edit_event",
+        args: {
+          event_type: event.type,
+          event_name: event.name,
+          subject: values.subject || "",
+          description: values.description || "",
+          add_teams_meet: values.add_teams_meet || false,
+          event_location: values.event_location || "",
+          event_participants: values.event_participants || [],
+          users: values.users || [],
+        },
+        callback: function (res) {
+          if (!res.exc) {
+            me.current_dialog.event_src_el.disabled = false;
+            me.current_dialog.hide();
+            me.refresh();
+            editingMsg.hide();
+            frappe.show_alert({
+              message: "Event Edited successfully",
+              indicator: "green",
+            });
+          }
+        },
+      });
+    };
   }
 
   event_cancel_handler(event_idx) {
@@ -199,8 +241,8 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
         },
         callback: function (res) {
           if (!res.exc) {
-            me.cancel_dialog.event_src_el.disabled = false;
-            me.cancel_dialog.hide();
+            me.current_dialog.event_src_el.disabled = false;
+            me.current_dialog.hide();
             me.refresh();
             cancellingMsg.hide();
             frappe.show_alert({
@@ -229,8 +271,8 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
         },
         callback: function (res) {
           if (!res.exc) {
-            me.reschedule_dialog.event_src_el.disabled = false;
-            me.reschedule_dialog.hide();
+            me.current_dialog.event_src_el.disabled = false;
+            me.current_dialog.hide();
             me.refresh();
             reschedulingMsg.hide();
             frappe.show_alert({
@@ -255,8 +297,8 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
         },
         callback: function (res) {
           if (!res.exc) {
-            me.slot_dialog.event_src_el.disabled = false;
-            me.slot_dialog.hide();
+            me.current_dialog.event_src_el.disabled = false;
+            me.current_dialog.hide();
             me.refresh();
             creatingMsg.hide();
             frappe.show_alert({
@@ -269,21 +311,9 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
     };
   }
 
-  cancel_slot_schedule() {
+  handle_dialog_cancel_event() {
     return () => {
-      this.slot_dialog.event_src_el.disabled = false;
-    };
-  }
-
-  cancel_slot_reschedule() {
-    return () => {
-      this.reschedule_dialog.event_src_el.disabled = false;
-    };
-  }
-
-  cancel_event_cancel() {
-    return () => {
-      this.cancel_dialog.event_src_el.disabled = false;
+      this.current_dialog.event_src_el.disabled = false;
     };
   }
 
@@ -301,13 +331,13 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
       return;
     }
     if (
-      this.slot_dialog.get_value("subject") &&
+      this.current_dialog.get_value("subject") &&
       !this.force_email_template_subject
     ) {
       return;
     }
 
-    const email_template = this.slot_dialog.get_value("email_template");
+    const email_template = this.current_dialog.get_value("email_template");
     if (!email_template) {
       return;
     }
@@ -316,9 +346,95 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
       .get_value("Email Template", email_template, "subject")
       .then((subject_res) => {
         if (subject_res.message?.subject) {
-          this.slot_dialog.set_value("subject", subject_res.message.subject);
+          this.current_dialog.set_value("subject", subject_res.message.subject);
         }
       });
+  }
+
+  async get_edit_dialog(event_idx) {
+    const event = this.events_data.events[event_idx];
+    const BTN_LABEL = "Edit Event";
+    const fields = [
+      {
+        fieldname: "subject",
+        fieldtype: "Small Text",
+        label: "Subject",
+        reqd: 1,
+        default: event.subject,
+      },
+      {
+        fieldname: "description",
+        fieldtype: "Text Editor",
+        label: "Description",
+        default: event.description,
+      },
+      {
+        fieldtype: "Column Break",
+        fieldname: "culumn_break_1",
+      },
+      {
+        default: "1",
+        fieldname: "add_teams_meet",
+        fieldtype: "Check",
+        label: "Add Teams Meet",
+        default: event.is_online,
+      },
+      {
+        fieldname: "event_location",
+        fieldtype: "Small Text",
+        label: "Event Location",
+        default: event.location,
+      },
+      {
+        fieldname: "user_group",
+        fieldtype: "Link",
+        label: "User Group",
+        options: "User Group",
+        onchange: () => this.handle_group_change(),
+      },
+      {
+        fieldname: "users",
+        fieldtype: "Table MultiSelect",
+        label: "Users",
+        options: "User Group Member",
+        default: event.participants
+          .filter((participant) => participant.ref_doctype === "User")
+          .map((participant) => ({ user: participant.ref_docname })),
+      },
+      {
+        fieldname: "section_break_3",
+        fieldtype: "Section Break",
+      },
+      {
+        fieldname: "event_participants",
+        fieldtype: "Table",
+        label: "Event Participants",
+        options: "Event Participants",
+        fields: this.prepare_table_fields(
+          await this.get_docfields("Event Participants"),
+        ),
+        reqd: 1,
+        data: event.participants
+          .filter((participant) => participant.ref_doctype !== "User")
+          .map((participant) => {
+            return {
+              reference_doctype: participant.ref_doctype,
+              reference_docname: participant.ref_docname,
+              email: participant.email,
+              custom_participant_name: participant.participant_name,
+              custom_required: participant.is_required,
+            };
+          }),
+      },
+    ];
+    return new frappe.ui.Dialog({
+      title: "Edit Event",
+      fields,
+      size: "large", // small, large, extra-large
+      primary_action_label: BTN_LABEL,
+      primary_action: this.edit_event_handler(event),
+      on_hide: this.handle_dialog_cancel_event(),
+    });
   }
 
   get_cancel_dialog(event_idx) {
@@ -337,7 +453,7 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
       size: "small", // small, large, extra-large
       primary_action_label: BTN_LABEL,
       primary_action: this.event_cancel_handler(event_idx),
-      on_hide: this.cancel_event_cancel(),
+      on_hide: this.handle_dialog_cancel_event(),
     });
   }
 
@@ -374,7 +490,7 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
       size: "large", // small, large, extra-large
       primary_action_label: BTN_LABEL,
       primary_action: this.reschedule_slot_handler(event_idx),
-      on_hide: this.cancel_slot_reschedule(),
+      on_hide: this.handle_dialog_cancel_event(),
     });
   }
 
@@ -499,7 +615,6 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
       {
         fieldtype: "Section Break",
         fieldname: "section_break_4",
-        label: "Participants",
       },
       {
         depends_on: "repeat_this_event",
@@ -584,7 +699,7 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
       size: "extra-large", // small, large, extra-large
       primary_action_label: BTN_LABEL,
       primary_action: this.schedule_slot_handler(),
-      on_hide: this.cancel_slot_schedule(),
+      on_hide: this.handle_dialog_cancel_event(),
     });
   }
 
@@ -603,12 +718,12 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
 
   calendar_on_select_handler(start_date, end_date, js_event, view) {
     let proposals_grid = null;
-    if (this.scheduling.slot_dialog?.is_visible) {
+    if (this.scheduling.current_dialog?.is_visible) {
       proposals_grid =
-        this.scheduling.slot_dialog.fields_dict.slot_proposals.grid;
-    } else if (this.scheduling.reschedule_dialog?.is_visible) {
+        this.scheduling.current_dialog.fields_dict.slot_proposals.grid;
+    } else if (this.scheduling.current_dialog?.is_visible) {
       proposals_grid =
-        this.scheduling.reschedule_dialog.fields_dict.slot_proposals.grid;
+        this.scheduling.current_dialog.fields_dict.slot_proposals.grid;
     }
     if (proposals_grid) {
       if (!proposals_grid.df.data) {

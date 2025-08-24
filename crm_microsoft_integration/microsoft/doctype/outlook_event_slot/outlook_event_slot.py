@@ -195,60 +195,9 @@ class OutlookEventSlot(WebsiteGenerator):
                 },
             )
 
-        new_participants = set()
-        user_values = {}
-        for p in self.event_participants:
-            new_participants.add((p.reference_doctype, p.reference_docname, p.email))
-        for u in self.users:
-            user_email, user_name = frappe.db.get_value(
-                "User", u.user, ["email", "full_name"]
-            )
-            user_values[u.user] = (user_email, user_name)
-            new_participants.add(("User", u.user, user_email))
-
-        existing_participants = list(event_doc.get("event_participants") or [])
-        for participant in existing_participants:
-            key = (
-                participant.reference_doctype,
-                participant.reference_docname,
-                participant.email,
-            )
-            if key not in new_participants:
-                event_doc.remove(participant)
-
-        existing_keys = {
-            (p.reference_doctype, p.reference_docname, p.email)
-            for p in event_doc.get("event_participants") or []
-        }
-        for p in self.event_participants:
-            key = (p.reference_doctype, p.reference_docname, p.email)
-            if key not in existing_keys:
-                event_doc.append(
-                    "event_participants",
-                    {
-                        "reference_doctype": p.reference_doctype,
-                        "reference_docname": p.reference_docname,
-                        "email": p.email,
-                        "custom_participant_name": p.custom_participant_name,
-                        "custom_required": p.custom_required,
-                    },
-                )
-                existing_keys.add(key)
-        for u in self.users:
-            email, full_name = user_values[u.user]
-            key = ("User", u.user, email)
-            if key not in existing_keys:
-                event_doc.append(
-                    "event_participants",
-                    {
-                        "reference_doctype": "User",
-                        "reference_docname": u.user,
-                        "email": email,
-                        "custom_participant_name": full_name,
-                    },
-                )
-                existing_keys.add(key)
-
+        event_doc = update_event_participants(
+            event_doc, self.event_participants, self.users
+        )
         event_doc.update(
             {
                 "starts_on": starts_on,
@@ -276,6 +225,79 @@ class OutlookEventSlot(WebsiteGenerator):
                 event_doc.set(week_field, False)
 
         return event_doc
+
+
+def update_event_participants(doc, event_participants, users):
+    frappe.log_error("args", {"event_participants": event_participants, "users": users})
+    new_participants = set()
+    user_values = {}
+    for p in event_participants:
+        new_participants.add(
+            (p.get("reference_doctype"), p.get("reference_docname"), p.get("email"))
+        )
+    for u in users:
+        user_email, user_name = frappe.db.get_value(
+            "User", u.get("user"), ["email", "full_name"]
+        )
+        user_values[u.get("user")] = (user_email, user_name)
+        new_participants.add(("User", u.get("user"), user_email))
+
+    existing_participants = list(doc.get("event_participants") or [])
+    for participant in existing_participants:
+        key = (
+            participant.get("reference_doctype"),
+            participant.get("reference_docname"),
+            participant.get("email"),
+        )
+        if key not in new_participants:
+            doc.remove(participant)
+
+    participants = doc.get("event_participants") or []
+    if doc.doctype == "Outlook Event Slot":
+        participants += doc.get("users") or []
+    existing_keys = {
+        (
+            p.get("reference_doctype", default="User"),
+            p.get("reference_docname", default=p.get("user")),
+            p.get(
+                "email", default=user_values[p.get("user")][1] if p.get("user") else ""
+            ),
+        )
+        for p in participants
+    }
+
+    for p in event_participants:
+        key = (p.get("reference_doctype"), p.get("reference_docname"), p.get("email"))
+        if key not in existing_keys:
+            doc.append(
+                "event_participants",
+                {
+                    "reference_doctype": p.get("reference_doctype"),
+                    "reference_docname": p.get("reference_docname"),
+                    "email": p.get("email"),
+                    "custom_participant_name": p.get("custom_participant_name"),
+                    "custom_required": p.get("custom_required"),
+                },
+            )
+            existing_keys.add(key)
+    for u in users:
+        email, full_name = user_values[u.get("user")]
+        key = ("User", u.get("user"), email)
+        if key not in existing_keys:
+            if doc.doctype == "Event":
+                doc.append(
+                    "event_participants",
+                    {
+                        "reference_doctype": "User",
+                        "reference_docname": u.get("user"),
+                        "email": email,
+                        "custom_participant_name": full_name,
+                    },
+                )
+            else:
+                doc.append("users", {"user": u.get("user")})
+            existing_keys.add(key)
+    return doc
 
 
 @frappe.whitelist()
@@ -330,4 +352,46 @@ def reschedule_event_slots(event_type, event_name, new_slots, reschedule_reason)
         event.rescheudle_event(event_doc, new_slots, reschedule_reason)
     else:
         event_doc.reschedule_event(new_slots, reschedule_reason)
+    event_doc.save()
+
+
+@frappe.whitelist()
+def edit_event(
+    event_type,
+    event_name,
+    subject,
+    description,
+    add_teams_meet,
+    event_location,
+    event_participants,
+    users,
+):
+    if event_type not in ["Event", "Outlook Event Slot"]:
+        frappe.throw("Invalid event_type")
+
+    add_teams_meet = frappe.parse_json(add_teams_meet)
+    event_participants = frappe.parse_json(event_participants)
+    users = frappe.parse_json(users)
+
+    event_doc = frappe.get_doc(event_type, event_name)
+
+    if event_type == "Event":
+        event_doc.update(
+            {
+                "subject": subject,
+                "description": description,
+                "custom_add_teams_meet": add_teams_meet,
+                "custom_outlook_location": event_location,
+            }
+        )
+    else:
+        event_doc.update(
+            {
+                "subject": subject,
+                "description": description,
+                "add_teams_meet": add_teams_meet,
+                "event_location": event_location,
+            }
+        )
+    event_doc = update_event_participants(event_doc, event_participants, users)
     event_doc.save()
