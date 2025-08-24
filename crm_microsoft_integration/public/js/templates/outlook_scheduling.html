@@ -95,7 +95,7 @@
               href="{{ "/app/" + frappe.router.slug(participant.ref_doctype) + "/" + encodeURIComponent(participant.ref_docname) }}"
               target="_blank"
               class="participant"
-              style="left: {{ p * -5 }}px;"
+              style="left: {{ p * -10 }}px;"
             >
               <div
                 class="participant-circle"
@@ -320,6 +320,7 @@
   }
   .participant {
     position: relative;
+    text-decoration: none;
   }
   .participant-circle {
     width: 32px;

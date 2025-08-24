@@ -22,20 +22,31 @@ def get_reference_events(ref_doctype, ref_docname):
         .left_join(EventSlot)
         .on(EventSlot.name == EventParticipants.parent)
         .select(
-            EventParticipantsAttendees.parenttype.as_("type"),
-            EventParticipantsAttendees.parent.as_("name"),
-            EventParticipantsAttendees.reference_doctype,
-            EventParticipantsAttendees.reference_docname,
-            EventParticipantsAttendees.email,
-            EventParticipantsAttendees.custom_participant_name,
-            EventParticipantsAttendees.custom_required,
-            EventParticipants.parenttype.as_("type"),
-            EventParticipants.parent.as_("name"),
-            EventParticipants.reference_doctype,
-            EventParticipants.reference_docname,
-            EventParticipants.email,
-            EventParticipants.custom_participant_name,
-            EventParticipants.custom_required,
+            IfNull(
+                EventParticipantsAttendees.parenttype, EventParticipants.parenttype
+            ).as_("type"),
+            IfNull(EventParticipantsAttendees.parent, EventParticipants.parent).as_(
+                "name"
+            ),
+            IfNull(
+                EventParticipantsAttendees.reference_doctype,
+                EventParticipants.reference_doctype,
+            ).as_("reference_doctype"),
+            IfNull(
+                EventParticipantsAttendees.reference_docname,
+                EventParticipants.reference_docname,
+            ).as_("reference_docname"),
+            IfNull(EventParticipantsAttendees.email, EventParticipants.email).as_(
+                "email"
+            ),
+            IfNull(
+                EventParticipantsAttendees.custom_participant_name,
+                EventParticipants.custom_participant_name,
+            ).as_("custom_participant_name"),
+            IfNull(
+                EventParticipantsAttendees.custom_required,
+                EventParticipants.custom_required,
+            ).as_("custom_required"),
             IfNull(EventSlot.status, "Confirmed").as_("status"),
             IfNull(EventSlot.subject, Event.subject).as_("subject"),
             IfNull(EventSlot.description, Event.description).as_("description"),
