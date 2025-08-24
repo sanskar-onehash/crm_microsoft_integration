@@ -228,7 +228,6 @@ class OutlookEventSlot(WebsiteGenerator):
 
 
 def update_event_participants(doc, event_participants, users):
-    frappe.log_error("args", {"event_participants": event_participants, "users": users})
     new_participants = set()
     user_values = {}
     for p in event_participants:
