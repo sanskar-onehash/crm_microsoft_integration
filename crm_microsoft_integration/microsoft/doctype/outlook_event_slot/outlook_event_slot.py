@@ -78,11 +78,11 @@ class OutlookEventSlot(WebsiteGenerator):
             commit=True,
         )
 
-    def confirm_event(self, slot_id, online, ignore_permissions=False):
+    def confirm_event(self, slot_id, is_online, ignore_permissions=False):
         if self.selected_slot_start:
             frappe.throw("Event is already scheduled.")
 
-        if online and not self.add_teams_meet:
+        if is_online and not self.add_teams_meet:
             frappe.throw("Can not select online mode.")
 
         starts_on = None
@@ -97,106 +97,13 @@ class OutlookEventSlot(WebsiteGenerator):
         if not starts_on:
             frappe.throw("Slot not found.")
 
-        existing_event_name = frappe.db.exists(
-            "Event", {"custom_outlook_from_slot": self.name}
-        )
-        event_doc = None
-
-        if existing_event_name:
-            event_doc = frappe.get_doc("Event", existing_event_name)
-            event_doc.set("status", "Open")
-        else:
-            event_doc = frappe.get_doc(
-                {
-                    "doctype": "Event",
-                    "custom_outlook_calendar": self.outlook_calendar,
-                    "custom_outlook_organiser": self.organiser,
-                    "custom_outlook_from_slot": self.name,
-                }
-            )
-            for event_participant in self.event_participants:
-                event_doc.append(
-                    "event_participants",
-                    {
-                        "reference_doctype": event_participant.reference_doctype,
-                        "reference_docname": event_participant.reference_docname,
-                        "email": event_participant.email,
-                        "custom_participant_name": event_participant.custom_participant_name,
-                        "custom_required": event_participant.custom_required,
-                    },
-                )
-
-        # Subject updates to - Online or - In Person
-        subject = event_doc.subject or self.subject
-        for mode_tag in MEETING_MODE_TAGS:
-            if subject.endswith(MEETING_MODE_TAGS[mode_tag]):
-                subject = subject[: -len(MEETING_MODE_TAGS[mode_tag])]
-                break
-        if online:
-            subject = subject + MEETING_MODE_TAGS["ONLINE"]
-        else:
-            subject = subject + MEETING_MODE_TAGS["IN_PERSON"]
-
-        # Propagating reschedule history
-        event_doc_reschedules = len(event_doc.custom_outlook_reschedule_history or [])
-        for reschedule_history in self.reschedule_history:
-            if reschedule_history.idx <= event_doc_reschedules:
-                continue
-            event_doc.append(
-                "custom_outlook_reschedule_history",
-                {
-                    "starts_on": reschedule_history.starts_on,
-                    "ends_on": reschedule_history.ends_on,
-                    "outlook_slot": reschedule_history.outlook_slot,
-                    "rescheduled_by": reschedule_history.rescheduled_by,
-                    "rescheduled_on": reschedule_history.rescheduled_on,
-                    "reschedule_reason": reschedule_history.reschedule_reason,
-                },
-            )
-
-        for user in self.users:
-            user_doc = frappe.get_doc("User", user.user)
-            event_doc.append(
-                "event_participants",
-                {
-                    "reference_doctype": user_doc.doctype,
-                    "reference_docname": user_doc.name,
-                    "email": user_doc.email,
-                    "custom_participant_name": user_doc.full_name,
-                },
-            )
-
-        event_doc.update(
-            {
-                "starts_on": starts_on,
-                "ends_on": ends_on,
-                "subject": subject,
-                "description": self.description,
-                "color": self.color,
-                "repeat_this_event": self.repeat_this_event,
-                "all_day": self.all_day,
-                "custom_sync_with_ms_calendar": True,
-                "repeat_on": self.repeat_on,
-                "repeat_till": self.repeat_till,
-                "event_type": "Public",
-            }
-        )
-        if online:
-            event_doc.set("custom_add_teams_meet", True)
-        elif self.event_location:
-            event_doc.set("custom_outlook_location", self.event_location)
-
-        for week_field in WEEK_FIELDS:
-            if self.get("week_field"):
-                event_doc.set(week_field, True)
-            else:
-                event_doc.set(week_field, False)
-
+        event_doc = self._prepare_event_doc(starts_on, ends_on, is_online)
         event_doc.save(ignore_permissions=ignore_permissions)
+
         self.update(
             {
                 "status": "Confirmed",
-                "selected_online": online,
+                "selected_online": is_online,
                 "selected_slot_start": starts_on,
                 "selected_slot_end": ends_on,
                 "docstatus": DocStatus.submitted(),
@@ -238,6 +145,137 @@ class OutlookEventSlot(WebsiteGenerator):
                 "reschedule_reason": cancel_reason,
             },
         )
+
+    def _prepare_event_doc(self, starts_on, ends_on, is_online):
+        existing_event_name = frappe.db.exists(
+            "Event", {"custom_outlook_from_slot": self.name}
+        )
+        event_doc = None
+
+        if existing_event_name:
+            event_doc = frappe.get_doc("Event", existing_event_name)
+        else:
+            event_doc = frappe.new_doc("Event")
+
+        event_doc.update(
+            {
+                "status": "Open",
+                "doctype": "Event",
+                "custom_outlook_calendar": self.outlook_calendar,
+                "custom_outlook_organiser": self.organiser,
+                "custom_outlook_from_slot": self.name,
+            }
+        )
+
+        # Subject updates to - Online or - In Person
+        subject = event_doc.subject or self.subject
+        for mode_tag in MEETING_MODE_TAGS:
+            if subject.endswith(MEETING_MODE_TAGS[mode_tag]):
+                subject = subject[: -len(MEETING_MODE_TAGS[mode_tag])]
+                break
+        if is_online:
+            subject = subject + MEETING_MODE_TAGS["ONLINE"]
+        else:
+            subject = subject + MEETING_MODE_TAGS["IN_PERSON"]
+
+        # Propagating reschedule history
+        event_doc_reschedules = len(event_doc.custom_outlook_reschedule_history or [])
+        for reschedule_history in self.reschedule_history:
+            if reschedule_history.idx <= event_doc_reschedules:
+                continue
+            event_doc.append(
+                "custom_outlook_reschedule_history",
+                {
+                    "starts_on": reschedule_history.starts_on,
+                    "ends_on": reschedule_history.ends_on,
+                    "outlook_slot": reschedule_history.outlook_slot,
+                    "rescheduled_by": reschedule_history.rescheduled_by,
+                    "rescheduled_on": reschedule_history.rescheduled_on,
+                    "reschedule_reason": reschedule_history.reschedule_reason,
+                },
+            )
+
+        new_participants = set()
+        user_values = {}
+        for p in self.event_participants:
+            new_participants.add((p.reference_doctype, p.reference_docname, p.email))
+        for u in self.users:
+            user_email, user_name = frappe.db.get_value(
+                "User", u.user, ["email", "full_name"]
+            )
+            user_values[u.user] = (user_email, user_name)
+            new_participants.add(("User", u.user, user_email))
+
+        existing_participants = list(event_doc.get("event_participants") or [])
+        for participant in existing_participants:
+            key = (
+                participant.reference_doctype,
+                participant.reference_docname,
+                participant.email,
+            )
+            if key not in new_participants:
+                event_doc.remove(participant)
+
+        existing_keys = {
+            (p.reference_doctype, p.reference_docname, p.email)
+            for p in event_doc.get("event_participants") or []
+        }
+        for p in self.event_participants:
+            key = (p.reference_doctype, p.reference_docname, p.email)
+            if key not in existing_keys:
+                event_doc.append(
+                    "event_participants",
+                    {
+                        "reference_doctype": p.reference_doctype,
+                        "reference_docname": p.reference_docname,
+                        "email": p.email,
+                        "custom_participant_name": p.custom_participant_name,
+                        "custom_required": p.custom_required,
+                    },
+                )
+                existing_keys.add(key)
+        for u in self.users:
+            email, full_name = user_values[u.user]
+            key = ("User", u.user, email)
+            if key not in existing_keys:
+                event_doc.append(
+                    "event_participants",
+                    {
+                        "reference_doctype": "User",
+                        "reference_docname": u.user,
+                        "email": email,
+                        "custom_participant_name": full_name,
+                    },
+                )
+                existing_keys.add(key)
+
+        event_doc.update(
+            {
+                "starts_on": starts_on,
+                "ends_on": ends_on,
+                "subject": subject,
+                "description": self.description,
+                "color": self.color,
+                "repeat_this_event": self.repeat_this_event,
+                "all_day": self.all_day,
+                "custom_sync_with_ms_calendar": True,
+                "repeat_on": self.repeat_on,
+                "repeat_till": self.repeat_till,
+                "event_type": "Public",
+            }
+        )
+        if is_online:
+            event_doc.set("custom_add_teams_meet", True)
+        elif self.event_location:
+            event_doc.set("custom_outlook_location", self.event_location)
+
+        for week_field in WEEK_FIELDS:
+            if self.get("week_field"):
+                event_doc.set(week_field, True)
+            else:
+                event_doc.set(week_field, False)
+
+        return event_doc
 
 
 @frappe.whitelist()
