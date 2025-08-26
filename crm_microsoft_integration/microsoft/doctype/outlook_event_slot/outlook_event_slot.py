@@ -216,6 +216,7 @@ class OutlookEventSlot(WebsiteGenerator):
         if is_online:
             event_doc.set("custom_add_teams_meet", True)
         elif self.event_location:
+            event_doc.set("custom_add_teams_meet", False)
             event_doc.set("custom_outlook_location", self.event_location)
 
         for week_field in WEEK_FIELDS:
