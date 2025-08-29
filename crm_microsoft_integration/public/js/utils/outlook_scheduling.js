@@ -745,11 +745,18 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
     return {
       scheduling: this,
       options: {
+        editable: false,
+        eventStartEditable: false,
+        eventDurationEditable: false,
+        selectable: true,
         events: (start, end, timezone, callback) =>
           this.calendar_get_events(start, end, timezone, callback),
         eventAfterAllRender: () => this.calendar_event_after_all_render(),
         select: (startDate, endDate, jsEvent, view) =>
           this.calendar_event_slot_select(startDate, endDate, jsEvent, view),
+        eventClick: () => {},
+        eventDrop: () => {},
+        eventResize: () => {},
       },
       doctype: "Event",
       field_map: {
