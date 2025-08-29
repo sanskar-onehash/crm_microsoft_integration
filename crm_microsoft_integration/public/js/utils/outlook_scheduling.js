@@ -1,6 +1,9 @@
 frappe.provide("microsoft.utils");
 frappe.provide("microsoft.utils.outlook_scheduling");
 
+const DEFAULT_PROPOSAL_COLOR = "orange";
+const DEFAULT_HOLIDAY_COLOR = "red";
+
 $.extend(microsoft.utils.outlook_scheduling, {
   schedule_new_event(frm, scheduled_events_wrapper, default_data = {}) {
     return new microsoft.utils.OutlookScheduling({
@@ -159,7 +162,7 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
     const me = this;
     return function () {
       me.calendar_dialog = me.get_calendar_dialog();
-      me.calendar = new CustomizedCalendar(
+      me.calendar = new frappe.views.Calendar(
         me.get_calendar_preferences(
           me.calendar_dialog.fields_dict.calendar_html.$wrapper,
         ),
@@ -552,12 +555,14 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
         fieldname: "all_day",
         fieldtype: "Check",
         label: "All Day",
+        hidden: 1,
       },
       {
         default: "0",
         fieldname: "repeat_this_event",
         fieldtype: "Check",
         label: "Repeat this Event",
+        hidden: 1,
       },
       {
         fieldname: "section_break_1",
@@ -715,15 +720,30 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
     });
   }
 
-  calendar_on_select_handler(start_date, end_date, js_event, view) {
-    let proposals_grid = null;
-    if (this.scheduling.current_dialog?.is_visible) {
-      proposals_grid =
-        this.scheduling.current_dialog.fields_dict.slot_proposals.grid;
-    } else if (this.scheduling.current_dialog?.is_visible) {
-      proposals_grid =
-        this.scheduling.current_dialog.fields_dict.slot_proposals.grid;
+  calendar_event_after_all_render() {
+    if (this.calendar.render_all_triggerd) {
+      return;
     }
+    this.calendar.render_all_triggerd = true;
+    (this.current_dialog.get_value("slot_proposals") || []).forEach(
+      (proposal) => {
+        this.calendar.$cal.fullCalendar("renderEvent", {
+          start: proposal.starts_on,
+          end: proposal.ends_on,
+          title: this.current_dialog.get_value("subject"),
+          backgroundColor: frappe.ui.color.get(
+            DEFAULT_PROPOSAL_COLOR,
+            "extra-light",
+          ),
+          textColor: frappe.ui.color.get(DEFAULT_PROPOSAL_COLOR, "dark"),
+        });
+      },
+    );
+  }
+
+  calendar_on_select_handler(start_date, end_date, js_event, view) {
+    const proposals_grid =
+      this.scheduling.current_dialog.fields_dict.slot_proposals.grid;
     if (proposals_grid) {
       if (!proposals_grid.df.data) {
         proposals_grid.df.data = proposals_grid.get_data() || [];
@@ -746,6 +766,11 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
     return {
       scheduling: this,
       custom_on_select: this.calendar_on_select_handler,
+      options: {
+        events: (start, end, timezone, callback) =>
+          this.calendar_get_events(start, end, timezone, callback),
+        eventAfterAllRender: () => this.calendar_event_after_all_render(),
+      },
       doctype: "Event",
       field_map: {
         id: "name",
@@ -765,6 +790,58 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
         },
       },
     };
+  }
+
+  calendar_get_events(start, end, timezone, callback) {
+    const events_promise = frappe.call({
+      method:
+        this.calendar.get_events_method || "frappe.desk.calendar.get_events",
+      type: "GET",
+      args: this.calendar.get_args(start, end),
+    });
+    const holidays_promise = frappe.db.get_list("Holiday List", {
+      filters: { from_date: [">=", start], to_date: ["<=", end] },
+      fields: ["holiday_list_name", "color", "name", "from_date", "to_date"],
+      limit: 500,
+    });
+
+    return Promise.all([events_promise, holidays_promise]).then(
+      (promise_res) => {
+        const events_res = promise_res[0];
+        const holidays_res = promise_res[1];
+
+        const events = this.calendar.prepare_events(events_res.message || []);
+        const holidays = this.prepare_holidays(holidays_res);
+
+        callback([...events, ...holidays]);
+      },
+    );
+  }
+
+  prepare_holidays(holidays_res) {
+    return (holidays_res || []).map((d) => {
+      d.id = d.name;
+      d.editable = frappe.model.can_write("Holiday List");
+      d.start = d.from_date;
+      d.end = d.to_date;
+
+      // show event on single day if start or end date is invalid
+      if (!frappe.datetime.validate(d.start) && d.end) {
+        d.start = frappe.datetime.add_days(d.end, -1);
+      }
+
+      if (d.start && !frappe.datetime.validate(d.end)) {
+        d.end = frappe.datetime.add_days(d.start, 1);
+      }
+
+      this.calendar.fix_end_date_for_event_render(d);
+
+      d.title = frappe.utils.html2text(d.holiday_list_name);
+      d.rendering = "background";
+      d.backgroundColor = frappe.ui.color.get(DEFAULT_HOLIDAY_COLOR, "default");
+
+      return d;
+    });
   }
 
   load_lib() {
@@ -819,96 +896,3 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
     return assets;
   }
 };
-
-class CustomizedCalendar extends frappe.views.Calendar {
-  setup_options(defaults) {
-    var me = this;
-    defaults.meridiem = "false";
-    this.cal_options = {
-      locale: frappe.boot.lang,
-      header: {
-        left: "prev, title, next",
-        right: "today, month, agendaWeek, agendaDay",
-      },
-      editable: true,
-      selectable: true,
-      selectHelper: true,
-      forceEventDuration: true,
-      displayEventTime: true,
-      defaultView: defaults.defaultView,
-      weekends: defaults.weekends,
-      nowIndicator: true,
-      buttonText: {
-        today: __("Today"),
-        month: __("Month"),
-        week: __("Week"),
-        day: __("Day"),
-      },
-      events: function (start, end, timezone, callback) {
-        return frappe.call({
-          method: me.get_events_method || "frappe.desk.calendar.get_events",
-          type: "GET",
-          args: me.get_args(start, end),
-          callback: function (r) {
-            var events = r.message || [];
-            events = me.prepare_events(events);
-            callback(events);
-          },
-        });
-      },
-      displayEventEnd: true,
-      eventRender: function (event, element) {
-        element.attr("title", event.tooltip);
-      },
-      eventClick: function (event) {
-        // edit event description or delete
-        var doctype = event.doctype || me.doctype;
-        if (frappe.model.can_read(doctype)) {
-          frappe.set_route("Form", doctype, event.name);
-        }
-      },
-      eventDrop: function (event, delta, revertFunc) {
-        me.update_event(event, revertFunc);
-      },
-      eventResize: function (event, delta, revertFunc) {
-        me.update_event(event, revertFunc);
-      },
-      select: function (startDate, endDate, jsEvent, view) {
-        if (view.name === "month" && endDate - startDate === 86400000) {
-          // detect single day click in month view
-          return;
-        }
-
-        me.custom_on_select &&
-          me.custom_on_select(startDate, endDate, jsEvent, view);
-
-        this.removeElement();
-      },
-      dayClick: function (date, jsEvent, view) {
-        if (view.name === "month") {
-          const $date_cell = $(
-            "td[data-date=" + date.format("YYYY-MM-DD") + "]",
-          );
-
-          if ($date_cell.hasClass("date-clicked")) {
-            me.$cal.fullCalendar("changeView", "agendaDay");
-            me.$cal.fullCalendar("gotoDate", date);
-            me.$wrapper.find(".date-clicked").removeClass("date-clicked");
-
-            // update "active view" btn
-            me.$wrapper.find(".fc-month-button").removeClass("active");
-            me.$wrapper.find(".fc-agendaDay-button").addClass("active");
-          }
-
-          me.$wrapper.find(".date-clicked").removeClass("date-clicked");
-          $date_cell.addClass("date-clicked");
-        }
-        return false;
-      },
-    };
-
-    if (this.options) {
-      $.extend(this.cal_options, this.options);
-    }
-  }
-}
