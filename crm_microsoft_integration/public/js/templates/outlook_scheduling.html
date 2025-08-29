@@ -67,6 +67,17 @@
         </div>
 
         <!-- Time Slots -->
+				{% if (event.reschedules && event.reschedules.length) { %}
+				{% 
+					var reschedule = event.reschedules[event.reschedules.length - 1];
+					var cancel_text = event.is_cancelled ? "Cancelled" : "Rescheduled";
+				%}
+        <div class="cancel-reason">
+					<div>{{ cancel_text }} By: <span>{{ reschedule.rescheduled_by }}</span></div>
+					<div>{{ cancel_text }} On: <span>{{ reschedule.rescheduled_on }}</span></div>
+					<div>{{ cancel_text }} Reason: <span>{{ reschedule.reschedule_reason }}</span></div>
+        </div>
+        {% } %} 
         {% if (event.slots && event.slots.length) { %}
         <div class="event-slots">
           <ul>
@@ -82,7 +93,21 @@
             🕒 {{ event.starts_on }} → {{ event.ends_on }}
           </div>
         </div>
-        {% } %} {% if (event.description) { %}
+        {% } %}{% if (event.type === "Event" && event.reschedules && event.reschedules.length) { %}
+        <div class="event-slots">
+					{% if(!event.is_cancelled || event.reschedules.length > 1) { %}
+						<div style="margin-bottom: 6px;">Reschedule History</div>
+					{% } %}
+          <ul>
+            {% for (var r = 0; r < event.reschedules.length; r++) { %} {% var reschedule =
+            event.reschedules[r]; %}
+							{% if (reschedule.starts_on && (event.is_cancelled ? r : true)) { %}
+							<li><span class="cancelled-slot">🕒 {{ reschedule.starts_on }} → {{ reschedule.ends_on }}</span> <span>By {{ reschedule.rescheduled_by }}</span></li>
+							{% } %}
+            {% } %}
+          </ul>
+        </div>
+        {% } %}  {% if (event.description) { %}
         <div class="event-description">{{ event.description }}</div>
         {% } %}
         <div class="event-footer">
@@ -286,6 +311,10 @@
   .meeting-link:hover {
     text-decoration: underline;
   }
+
+	.cancel-reason {
+		margin-bottom: 16px;
+	}
 
   /* --- Slots --- */
   .event-slots {

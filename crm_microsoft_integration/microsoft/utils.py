@@ -78,67 +78,41 @@ def get_reference_events(ref_doctype, ref_docname):
         .orderby("creation", order=Order.desc)
     ).run(as_dict=True)
 
-    # Slot Proposals
-    event_slots = {
-        event.name
-        for event in events
-        if event.type == "Outlook Event Slot" and event.status != "Confirmed"
-    }
-    proposed_slots = frappe.db.get_all(
-        "Outlook Slot Proposals",
-        {
-            "parent": ["in", list(event_slots)],
-            "parenttype": "Outlook Event Slot",
-            "parentfield": "slot_proposals",
-        },
-        ["parent", "starts_on", "ends_on"],
-    )
-    event_slot_wise_proposed_slots = {}
-    for proposed_slot in proposed_slots:
-        if proposed_slot.parent not in event_slot_wise_proposed_slots:
-            event_slot_wise_proposed_slots[proposed_slot.parent] = []
-
-        event_slot_wise_proposed_slots[proposed_slot.parent].append(
-            {"starts_on": proposed_slot.starts_on, "ends_on": proposed_slot.ends_on}
-        )
+    event_wise_data = _get_event_wise_metadata(events)
 
     now_datetime = utils.now_datetime()
     have_upcoming_events = False
     grouped_events = []
     last_event = None
-    for event in events:
-        if event.type == "Outlook Event Slot" and event.status == "Confirmed":
+    for evt in events:
+        if evt.type == "Outlook Event Slot" and evt.status == "Confirmed":
             continue
 
-        if (
-            not have_upcoming_events
-            and event.starts_on
-            and event.starts_on > now_datetime
-        ):
+        if not have_upcoming_events and evt.starts_on and evt.starts_on > now_datetime:
             have_upcoming_events = True
 
-        if last_event and last_event["name"] != event.name:
+        if last_event and last_event["name"] != evt.name:
             grouped_events.append(last_event)
             last_event = None
 
         if not last_event:
-            is_cancelled = event.event_status and event.event_status == "Cancelled"
+            is_cancelled = evt.event_status and evt.event_status == "Cancelled"
             can_reschedule = not is_cancelled and (
-                event.starts_on > now_datetime if event.starts_on else True
+                evt.starts_on > now_datetime if evt.starts_on else True
             )  # True for slots
-            can_cancel = can_reschedule or event.event_status == "Open"
+            can_cancel = can_reschedule or evt.event_status == "Open"
             last_event = {
-                "type": event.type,
-                "name": event.name,
-                "starts_on": event.starts_on,
-                "ends_on": event.ends_on,
-                "subject": event.subject,
-                "description": event.description,
-                "organiser": event.organiser,
-                "location": event.location,
-                "is_online": event.is_online,
-                "meeting_link": event.meeting_link,
-                "creation": event.creation,
+                "type": evt.type,
+                "name": evt.name,
+                "starts_on": evt.starts_on,
+                "ends_on": evt.ends_on,
+                "subject": evt.subject,
+                "description": evt.description,
+                "organiser": evt.organiser,
+                "location": evt.location,
+                "is_online": evt.is_online,
+                "meeting_link": evt.meeting_link,
+                "creation": evt.creation,
                 "participants": [],
                 # TODO: There can be an offset limit for rescheduling
                 "can_reschedule": can_reschedule,
@@ -146,15 +120,18 @@ def get_reference_events(ref_doctype, ref_docname):
                 "is_cancelled": is_cancelled,
             }
 
-            if event.type == "Outlook Event Slot":
-                last_event["slots"] = event_slot_wise_proposed_slots[event.name]
+            if event_wise_data.get(evt.name):
+                last_event["reschedules"] = event_wise_data[evt.name]["reschedules"]
+
+                if evt.type == "Outlook Event Slot":
+                    last_event["slots"] = event_wise_data[evt.name]["slots"]
 
         participant = {
-            "ref_doctype": event.reference_doctype,
-            "ref_docname": event.reference_docname,
-            "email": event.email,
-            "participant_name": event.custom_participant_name,
-            "is_required": event.custom_required,
+            "ref_doctype": evt.reference_doctype,
+            "ref_docname": evt.reference_docname,
+            "email": evt.email,
+            "participant_name": evt.custom_participant_name,
+            "is_required": evt.custom_required,
         }
         if participant not in last_event["participants"]:
             last_event["participants"].append(participant)
@@ -216,3 +193,100 @@ def get_slots(start, end):
     ).run(as_dict=True)
 
     return slots
+
+
+def _get_event_wise_metadata(events):
+    # Prepare unique event & slot names
+    event_slots = set()
+    event_names = set()
+    for evt in events:
+        if (
+            evt.type == "Outlook Event Slot" and evt.status != "Confirmed"
+        ) or evt.type == "Event":
+            event_slots.add(evt.name)
+        if evt.type == "Event":
+            event_names.add(evt.name)
+    event_slots = list(event_slots)
+    event_names = list(event_names)
+
+    event_wise_metadata = {}
+
+    # Proposed Slots
+    proposed_slots = frappe.db.get_all(
+        "Outlook Slot Proposals",
+        {
+            "parent": ["in", event_slots],
+            "parenttype": "Outlook Event Slot",
+            "parentfield": "slot_proposals",
+        },
+        ["parent", "starts_on", "ends_on"],
+    )
+    for proposed_slot in proposed_slots:
+        if proposed_slot.parent not in event_wise_metadata:
+            event_wise_metadata[proposed_slot.parent] = {
+                "slots": [],
+                "reschedules": [],
+            }
+
+        event_wise_metadata[proposed_slot.parent]["slots"].append(
+            {"starts_on": proposed_slot.starts_on, "ends_on": proposed_slot.ends_on}
+        )
+
+    # Reschedules
+    ## Slot Reschedules
+    slot_reschedule_history = frappe.db.get_all(
+        "Outlook Slot Reschedule History",
+        {
+            "parent": ["in", event_slots],
+            "parenttype": "Outlook Event Slot",
+        },
+        ["parent", "rescheduled_by", "rescheduled_on", "reschedule_reason"],
+        order_by="idx asc",
+    )
+    for event_reschedule in slot_reschedule_history:
+        if event_reschedule.parent not in event_wise_metadata:
+            event_wise_metadata[event_reschedule.parent] = {
+                "reschedules": [],
+                "slots": [],
+            }
+
+        event_wise_metadata[event_reschedule.parent]["reschedules"].append(
+            {
+                "rescheduled_by": event_reschedule.rescheduled_by,
+                "rescheduled_on": event_reschedule.rescheduled_on,
+                "reschedule_reason": event_reschedule.reschedule_reason,
+            }
+        )
+
+    ## Event Reschedules
+    event_reschedule_history = frappe.db.get_all(
+        "Outlook Reschedule History",
+        {"parent": ["in", event_names], "parenttype": "Event"},
+        [
+            "parent",
+            "starts_on",
+            "ends_on",
+            "rescheduled_by",
+            "rescheduled_on",
+            "reschedule_reason",
+        ],
+        order_by="idx asc",
+    )
+    for event_reschedule in event_reschedule_history:
+        if event_reschedule.parent not in event_wise_metadata:
+            event_wise_metadata[event_reschedule.parent] = {
+                "reschedules": [],
+                "slots": [],
+            }
+
+        event_wise_metadata[event_reschedule.parent]["reschedules"].append(
+            {
+                "starts_on": event_reschedule.starts_on,
+                "ends_on": event_reschedule.ends_on,
+                "rescheduled_by": event_reschedule.rescheduled_by,
+                "rescheduled_on": event_reschedule.rescheduled_on,
+                "reschedule_reason": event_reschedule.reschedule_reason,
+            }
+        )
+
+    return event_wise_metadata
