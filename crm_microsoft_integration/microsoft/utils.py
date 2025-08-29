@@ -2,6 +2,10 @@ import frappe
 from frappe import utils
 from frappe.query_builder.functions import IfNull
 from pypika import Order
+from frappe.desk.doctype.event import event
+from frappe.desk import calendar
+
+DEFAULT_SLOT_COLOR = "#ffff00"
 
 
 @frappe.whitelist()
@@ -157,3 +161,58 @@ def get_reference_events(ref_doctype, ref_docname):
     if last_event and last_event not in grouped_events:
         grouped_events.append(last_event)
     return {"events": grouped_events, "have_upcoming_events": have_upcoming_events}
+
+
+@frappe.whitelist()
+def get_calendar_events(doctype, start, end, field_map, filters=None, fields=None):
+    events = calendar.get_events(
+        doctype, start, end, field_map, filters=filters, fields=fields
+    )
+
+    if doctype == "Outlook Event Slot":
+        return events
+
+    slots = get_slots(start, end)
+
+    return events + slots
+
+
+@frappe.whitelist()
+def get_events(
+    start, end, user=None, for_reminder=False, filters=None
+) -> list[frappe._dict]:
+    events = event.get_events(
+        start, end, user=user, for_reminder=for_reminder, filters=filters
+    )
+    slots = get_slots(start, end)
+
+    return events + slots
+
+
+def get_slots(start, end):
+    Slot = frappe.qb.DocType("Outlook Event Slot")
+    Slot_Proposals = frappe.qb.DocType("Outlook Slot Proposals")
+    slots = (
+        frappe.qb.from_(Slot)
+        .join(Slot_Proposals)
+        .on(Slot.name == Slot_Proposals.parent)
+        .select(
+            IfNull(Slot.color, DEFAULT_SLOT_COLOR).as_("color"),
+            Slot.all_day,
+            Slot.description,
+            Slot.owner,
+            Slot.repeat_this_event,
+            Slot.repeat_on,
+            Slot.repeat_till,
+            Slot.subject,
+            Slot_Proposals.ends_on,
+            Slot_Proposals.starts_on,
+        )
+        .where(
+            (Slot_Proposals.starts_on >= start)
+            & (Slot_Proposals.ends_on <= end)
+            & (Slot.status != "Confirmed")
+        )
+    ).run(as_dict=True)
+
+    return slots

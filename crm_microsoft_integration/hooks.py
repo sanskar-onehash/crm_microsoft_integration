@@ -175,9 +175,10 @@ doc_events = {
 # Overriding Methods
 # ------------------------------
 #
-# override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "crm_microsoft_integration.event.get_events"
-# }
+override_whitelisted_methods = {
+    "frappe.desk.calendar.get_events": "crm_microsoft_integration.microsoft.utils.get_calendar_events",
+    "frappe.desk.doctype.event.event.get_events": "crm_microsoft_integration.microsoft.utils.get_events",
+}
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
