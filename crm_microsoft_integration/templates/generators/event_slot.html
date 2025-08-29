@@ -47,7 +47,7 @@
     frappe-session-status="{{ 'logged-in' if frappe.session.user != 'Guest' else 'logged-out'}}"
   >
     <div class="booking-container">
-      {% if status != "Confirmed" and len(slots) %}
+      {% if status != "Confirmed" and slots|length %}
       <div class="booking-card" id="bookingCard">
         <div class="booking-header">
           <div>
@@ -197,23 +197,30 @@
             {% endif %}
           </div>
           <div
-            class="closed-card {{ '' if status != 'Confirmed' and not len(slots) else 'hidden' }}"
-            id="closedCard"
-          >
-            <div class="closed-content">
-              <div class="closed-icon">
-                <i class="fa fa-solid fa-lock"></i>
-              </div>
-              <h1 class="closed-title">Booking Closed</h1>
-              <p class="closed-subtitle">
-                Booking time reached and no longer accepting input.
-              </p>
-            </div>
-          </div>
-          <div
-            class="note {{ '' if status == 'Confirmed' or len(slots) else 'hidden' }}"
+            class="note {{ '' if status == 'Confirmed' or slots|length else 'hidden' }}"
           >
             All details have been emailed to you.
+          </div>
+        </div>
+      </div>
+      <div
+        class="closed-card {{ '' if status != 'Confirmed' and not slots|length else 'hidden' }}"
+        id="closedCard"
+        role="status"
+        aria-live="polite"
+      >
+        <div class="closed-icon" aria-hidden="true">
+          <i class="fa fa-lock" aria-hidden="true"></i>
+        </div>
+        <div class="closed-content">
+          <div class="closed-top">
+            <div style="flex: 1">
+              <h3 class="closed-title">Booking closed</h3>
+              <p class="closed-subtitle">
+                Booking time reached — we're no longer accepting input for this
+                event.
+              </p>
+            </div>
           </div>
         </div>
       </div>

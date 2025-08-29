@@ -30,7 +30,8 @@ body {
 }
 
 .booking-container .booking-card,
-.booking-container .confirmation-card {
+.booking-container .confirmation-card,
+.booking-container .closed-card {
   background: white;
   border-radius: 1.25rem;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
@@ -294,7 +295,7 @@ body {
 /* Success state styling */
 .confirmation-content {
   text-align: center;
-  padding: 2rem 1.5rem;
+  padding: 2rem 1.5rem 0.5rem;
   animation: fadeInUp 0.6s ease;
 }
 
@@ -381,6 +382,44 @@ body {
 .calendar-btn:hover {
   background: #067a96;
   box-shadow: 0 4px 12px rgba(8, 145, 178, 0.25);
+}
+
+/* Closed state styling */
+.closed-content {
+  text-align: center;
+  padding: 2rem 1.5rem 0.5rem;
+  animation: fadeInUp 0.6s ease;
+}
+
+.closed-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: #fef2f2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+  animation: popIn 0.5s ease;
+}
+
+.closed-icon i {
+  font-size: 2.5rem;
+  color: #dc2626;
+}
+
+.closed-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-top: 1rem;
+  color: #111;
+}
+
+.closed-subtitle {
+  font-size: 1rem;
+  color: #555;
+  margin-top: 1rem;
 }
 
 /* Animations */
