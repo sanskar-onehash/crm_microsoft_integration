@@ -847,8 +847,6 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
 
       this.calendar_dialog.cancel();
     }
-
-    this.calendar.removeElement();
   }
 
   load_lib() {
