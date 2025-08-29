@@ -124,7 +124,13 @@ class OutlookEventSlot(WebsiteGenerator):
         if self.docstatus.is_cancelled():
             frappe.throw("Outlook Event Slot doc is cancelled, can not continue.")
 
-        self.set("slot_proposals", new_slots)
+        self.slot_proposals = []
+        for slot in new_slots:
+            self.append(
+                "slot_proposals",
+                {"starts_on": slot["starts_on"], "ends_on": slot["ends_on"]},
+            )
+
         self.append(
             "slot_reschedule_history",
             {
