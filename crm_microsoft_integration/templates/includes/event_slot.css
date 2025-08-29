@@ -422,6 +422,53 @@ body {
   margin-top: 1rem;
 }
 
+.loader-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  visibility: hidden;
+  opacity: 0;
+  transition:
+    opacity 0.25s ease-in-out,
+    visibility 0.25s ease-in-out;
+  backdrop-filter: blur(3px);
+}
+
+.loader-overlay.active {
+  visibility: visible;
+  opacity: 1;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #e5e7eb; /* light neutral */
+  border-top-color: #0891b2; /* accent cyan */
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.loader-text {
+  margin-top: 1rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #374151; /* neutral dark for professional tone */
+  text-align: center;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Animations */
 @keyframes popIn {
   0% {
