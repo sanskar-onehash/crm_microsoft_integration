@@ -7,6 +7,8 @@ from frappe.model.document import DocStatus
 from frappe.website.website_generator import WebsiteGenerator
 from crm_microsoft_integration.microsoft.customizations import event
 
+BOOKING_OFFSET = 24  # hours
+
 WEEK_FIELDS = [
     "monday",
     "tuesday",
@@ -28,6 +30,8 @@ class OutlookEventSlot(WebsiteGenerator):
     )
 
     def get_context(self, context):
+        now_datetime = utils.now_datetime()
+        booking_offset_time = utils.add_to_date(now_datetime, hours=BOOKING_OFFSET)
 
         context.update(
             {
@@ -43,6 +47,7 @@ class OutlookEventSlot(WebsiteGenerator):
                     "slots": [
                         {"start": slot.starts_on, "end": slot.ends_on, "id": slot.name}
                         for slot in self.slot_proposals
+                        if booking_offset_time < slot.starts_on
                     ],
                 }
             )

@@ -47,7 +47,7 @@
     frappe-session-status="{{ 'logged-in' if frappe.session.user != 'Guest' else 'logged-out'}}"
   >
     <div class="booking-container">
-      {% if status != "Confirmed" %}
+      {% if status != "Confirmed" and len(slots) %}
       <div class="booking-card" id="bookingCard">
         <div class="booking-header">
           <div>
@@ -196,8 +196,25 @@
             </div>
             {% endif %}
           </div>
-
-          <div class="note">All details have been emailed to you.</div>
+          <div
+            class="closed-card {{ '' if status != 'Confirmed' and not len(slots) else 'hidden' }}"
+            id="closedCard"
+          >
+            <div class="closed-content">
+              <div class="closed-icon">
+                <i class="fa fa-solid fa-lock"></i>
+              </div>
+              <h1 class="closed-title">Booking Closed</h1>
+              <p class="closed-subtitle">
+                Booking time reached and no longer accepting input.
+              </p>
+            </div>
+          </div>
+          <div
+            class="note {{ '' if status == 'Confirmed' or len(slots) else 'hidden' }}"
+          >
+            All details have been emailed to you.
+          </div>
         </div>
       </div>
     </div>
