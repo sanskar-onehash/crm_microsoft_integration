@@ -741,35 +741,15 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
     );
   }
 
-  calendar_on_select_handler(start_date, end_date, js_event, view) {
-    const proposals_grid =
-      this.scheduling.current_dialog.fields_dict.slot_proposals.grid;
-    if (proposals_grid) {
-      if (!proposals_grid.df.data) {
-        proposals_grid.df.data = proposals_grid.get_data() || [];
-      }
-      const row_idx = proposals_grid.df.data.length + 1;
-      proposals_grid.df.data.push({
-        idx: row_idx,
-        __islocal: true,
-        starts_on: frappe.datetime.get_datetime_as_string(start_date, false),
-        ends_on: frappe.datetime.get_datetime_as_string(end_date, false),
-      });
-      proposals_grid.df.on_add_row && proposals_grid.df.on_add_row(row_idx);
-      proposals_grid.refresh();
-    }
-
-    this.scheduling.calendar_dialog.cancel();
-  }
-
   get_calendar_preferences(parent) {
     return {
       scheduling: this,
-      custom_on_select: this.calendar_on_select_handler,
       options: {
         events: (start, end, timezone, callback) =>
           this.calendar_get_events(start, end, timezone, callback),
         eventAfterAllRender: () => this.calendar_event_after_all_render(),
+        select: (startDate, endDate, jsEvent, view) =>
+          this.calendar_event_slot_select(startDate, endDate, jsEvent, view),
       },
       doctype: "Event",
       field_map: {
@@ -842,6 +822,33 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
 
       return d;
     });
+  }
+
+  calendar_event_slot_select(startDate, endDate, jsEvent, view) {
+    if (view.name === "month" && endDate - startDate === 86400000) {
+      // detect single day click in month view
+      return;
+    }
+
+    const proposals_grid = this.current_dialog.fields_dict.slot_proposals.grid;
+    if (proposals_grid) {
+      if (!proposals_grid.df.data) {
+        proposals_grid.df.data = proposals_grid.get_data() || [];
+      }
+      const row_idx = proposals_grid.df.data.length + 1;
+      proposals_grid.df.data.push({
+        idx: row_idx,
+        __islocal: true,
+        starts_on: frappe.datetime.get_datetime_as_string(startDate, false),
+        ends_on: frappe.datetime.get_datetime_as_string(endDate, false),
+      });
+      proposals_grid.df.on_add_row && proposals_grid.df.on_add_row(row_idx);
+      proposals_grid.refresh();
+
+      this.calendar_dialog.cancel();
+    }
+
+    this.calendar.removeElement();
   }
 
   load_lib() {
