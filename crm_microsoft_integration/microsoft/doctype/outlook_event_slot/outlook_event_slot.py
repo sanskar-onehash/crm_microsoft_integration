@@ -41,7 +41,7 @@ class OutlookEventSlot(WebsiteGenerator):
             }
         )
 
-        if self.status != "Confirmed":
+        if self.status != "Confirmed" and self.docstatus != 2:
             context.update(
                 {
                     "slots": [
