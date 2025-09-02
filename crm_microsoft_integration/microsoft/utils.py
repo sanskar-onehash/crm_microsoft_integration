@@ -68,6 +68,7 @@ def get_reference_events(ref_doctype, ref_docname):
             Event.starts_on,
             Event.ends_on,
             Event.status.as_("event_status"),
+            EventSlot.docstatus,
         )
         .where(
             (EventParticipants.reference_doctype == ref_doctype)
@@ -96,7 +97,9 @@ def get_reference_events(ref_doctype, ref_docname):
             last_event = None
 
         if not last_event:
-            is_cancelled = evt.event_status and evt.event_status == "Cancelled"
+            is_cancelled = (evt.event_status and evt.event_status == "Cancelled") or (
+                evt.docstatus and evt.docstatus == 2
+            )
             can_reschedule = not is_cancelled and (
                 evt.starts_on > now_datetime if evt.starts_on else True
             )  # True for slots

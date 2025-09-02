@@ -156,6 +156,8 @@ class OutlookEventSlot(WebsiteGenerator):
                 "reschedule_reason": cancel_reason,
             },
         )
+        self.submit()
+        self.cancel()
 
     def _prepare_event_doc(self, starts_on, ends_on, is_online):
         existing_event_name = frappe.db.exists(
@@ -363,7 +365,6 @@ def reschedule_event_slots(event_type, event_name, new_slots, reschedule_reason)
         event.rescheudle_event(event_doc, new_slots, reschedule_reason)
     else:
         event_doc.reschedule_event(new_slots, reschedule_reason)
-    event_doc.save()
 
 
 @frappe.whitelist()

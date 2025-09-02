@@ -151,6 +151,7 @@ def cancel_event(doc, cancel_reason):
             "reschedule_reason": cancel_reason,
         },
     )
+    doc.save()
 
 
 def rescheudle_event(doc, new_slots, reschedule_reason):
