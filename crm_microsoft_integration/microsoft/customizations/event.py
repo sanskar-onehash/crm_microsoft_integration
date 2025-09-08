@@ -154,7 +154,7 @@ def cancel_event(doc, cancel_reason):
     doc.save()
 
 
-def rescheudle_event(doc, new_slots, reschedule_reason):
+def reschedule_event(doc, new_slots, reschedule_reason):
     if doc.status != "Open":
         frappe.throw(f"Can not reschedule `{doc.status}` event.")
     if not doc.custom_sync_with_ms_calendar:
@@ -234,6 +234,7 @@ def rescheudle_event(doc, new_slots, reschedule_reason):
     event_slot_doc = event_slot_doc.save()
 
     doc.set("custom_outlook_from_slot", event_slot_doc.name)
+    doc.save()
 
 
 @frappe.whitelist()

@@ -139,6 +139,7 @@ class OutlookEventSlot(WebsiteGenerator):
                 "reschedule_reason": reschedule_reason,
             },
         )
+        self.save()
 
     def cancel_event(self, cancel_reason):
         now_datetime = utils.now_datetime()
@@ -340,7 +341,6 @@ def cancel_event(event_type, event_name, cancel_reason):
         event.cancel_event(event_doc, cancel_reason)
     else:
         event_doc.cancel_event(cancel_reason)
-    event_doc.save()
 
 
 @frappe.whitelist()
@@ -362,7 +362,7 @@ def reschedule_event_slots(event_type, event_name, new_slots, reschedule_reason)
 
     event_doc = frappe.get_doc(event_type, event_name)
     if event_type == "Event":
-        event.rescheudle_event(event_doc, new_slots, reschedule_reason)
+        event.reschedule_event(event_doc, new_slots, reschedule_reason)
     else:
         event_doc.reschedule_event(new_slots, reschedule_reason)
 

@@ -192,6 +192,7 @@ def get_slots(start, end):
             (Slot_Proposals.starts_on >= start)
             & (Slot_Proposals.ends_on <= end)
             & (Slot.status != "Confirmed")
+            & (Slot.docstatus != 2)
         )
     ).run(as_dict=True)
 

@@ -204,7 +204,7 @@
         </div>
       </div>
       <div
-        class="closed-card {{ '' if (status != 'Confirmed' and not slots|length) or docstatus != 2 else 'hidden' }}"
+        class="closed-card {{ '' if (status != 'Confirmed' and not slots|length) or docstatus == 2 else 'hidden' }}"
         id="closedCard"
         role="status"
         aria-live="polite"
