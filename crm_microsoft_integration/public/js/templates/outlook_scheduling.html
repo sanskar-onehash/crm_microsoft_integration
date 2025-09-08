@@ -74,7 +74,7 @@
 				%}
         <div class="cancel-reason">
 					<div>{{ cancel_text }} By: <span>{{ reschedule.rescheduled_by }}</span></div>
-					<div>{{ cancel_text }} On: <span>{{ reschedule.rescheduled_on }}</span></div>
+					<div>{{ cancel_text }} On: <span data-format-date="{{ reschedule.rescheduled_on }}">{{ reschedule.rescheduled_on }}</span></div>
 					<div>{{ cancel_text }} Reason: <span>{{ reschedule.reschedule_reason }}</span></div>
         </div>
         {% } %} 
@@ -83,14 +83,14 @@
           <ul>
             {% for (var s = 0; s < event.slots.length; s++) { %} {% var slot =
             event.slots[s]; %}
-            <li>🕒 {{ slot.starts_on }} → {{ slot.ends_on }}</li>
+            <li>🕒 <span  data-format-date="{{ slot.starts_on }}">{{ slot.starts_on }}<span> → <span data-format-date="{{ slot.ends_on }}">{{ slot.ends_on }}</span></li>
             {% } %}
           </ul>
         </div>
         {% } %} {% if (event.starts_on) { %}
         <div class="event-slots">
           <div class="{{ event.is_cancelled ? 'cancelled-slot' : '' }}">
-            🕒 {{ event.starts_on }} → {{ event.ends_on }}
+            🕒 <span data-format-date="{{ event.starts_on }}">{{ event.starts_on }}</span> → <span data-format-date="{{ event.ends_on }}">{{ event.ends_on }}</span>
           </div>
         </div>
         {% } %}{% if (event.reschedules && (event.is_cancelled ? event.reschedules.length > 1 : event.reschedules.length)) { %}
@@ -100,7 +100,12 @@
             {% for (var r = 0; r < event.reschedules.length; r++) { %} {% var reschedule =
             event.reschedules[r]; %}
 							{% if (event.type === "Event" && reschedule.starts_on) { %}
-							<li><span class="cancelled-slot">🕒 {{ reschedule.starts_on }} → {{ reschedule.ends_on }}</span> <span>By {{ reschedule.rescheduled_by }}</span></li>
+							<li>
+								<span class="cancelled-slot">
+									🕒 <span data-format-date="{{ reschedule.starts_on }}">{{ reschedule.starts_on }}</span> 
+									→ <span data-format-date="{{ reschedule.starts_on }}">{{ reschedule.ends_on }}</span>
+								</span> 
+								<span>By {{ reschedule.rescheduled_by }}</span></li>
 							{% } else { %}
 							<li><span class=""><span>Rescheduled By: {{ reschedule.rescheduled_by }}</span></li>
 							{% } %}

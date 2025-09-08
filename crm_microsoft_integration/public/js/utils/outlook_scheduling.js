@@ -81,6 +81,7 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
           });
 
           $(activities_html).appendTo(me.scheduled_events_wrapper);
+          me.format_dates();
           me.setup_listeners();
           me.on_refresh && me.on_refresh();
         }
@@ -124,6 +125,14 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
         );
       }
     };
+  }
+
+  format_dates() {
+    $(this.scheduled_events_wrapper)
+      .find("[data-format-date]")
+      .each((_, el) => {
+        el.textContent = this.format_date(el.getAttribute("data-format-date"));
+      });
   }
 
   async handle_event_edit(e, e_src, event_idx) {
@@ -906,5 +915,27 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
       assets.push("assets/frappe/js/lib/fullcalendar/locale-all.js");
     }
     return assets;
+  }
+
+  format_date(inputStr) {
+    const cleanedInput = inputStr.split(".")[0];
+
+    const isoStr = cleanedInput.replace(" ", "T") + "Z";
+
+    const date = new Date(isoStr);
+
+    // Convert to IST (+5:30)
+    const options = {
+      timeZone: "Asia/Kolkata",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    };
+
+    const formatter = new Intl.DateTimeFormat("en-IN", options);
+    return formatter.format(date);
   }
 };
