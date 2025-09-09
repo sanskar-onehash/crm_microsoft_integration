@@ -920,7 +920,7 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
   format_date(inputStr) {
     const cleanedInput = inputStr.split(".")[0];
 
-    const isoStr = cleanedInput.replace(" ", "T") + "Z";
+    const isoStr = cleanedInput.replace(" ", "T");
 
     const date = new Date(isoStr);
 
