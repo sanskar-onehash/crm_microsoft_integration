@@ -75,6 +75,11 @@ def get_reference_events(ref_doctype, ref_docname):
             & (EventParticipants.reference_docname == ref_docname)
             & (EventParticipants.parenttype.isin(parent_doctypes))
             & (EventParticipants.parentfield == "event_participants")
+            & (
+                Event.custom_sync_with_ms_calendar
+                | Event.custom_is_outlook_event
+                | EventSlot.name
+            )
         )
         .orderby("creation", order=Order.desc)
     ).run(as_dict=True)
