@@ -15,8 +15,14 @@
         <span>{{ __("Calendar Events") }}</span>
       </div>
 
-      {% if (events && events.length) { %} {% for (var i = 0; i < events.length;
-      i++) { %} {% var event = events[i]; %}
+      {% if (events && events.length) { %}
+			{% events.sort(function(a, b) {
+					if (a.can_reschedule && !b.can_reschedule) return -1;
+					if (!a.can_reschedule && b.can_reschedule) return 1;
+					return new Date(b.creation) - new Date(a.creation);
+				}); %}
+			{% for (var i = 0; i < events.length; i++) { %} 
+			{% var event = events[i]; %}
       <div class="event-card">
         <div class="event-actions">
           <button
