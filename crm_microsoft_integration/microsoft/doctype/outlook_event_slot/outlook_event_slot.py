@@ -20,6 +20,13 @@ WEEK_FIELDS = [
 ]
 
 MEETING_MODE_TAGS = {"ONLINE": " - Online", "IN_PERSON": " - In Person"}
+SLOT_UPDATE_NOTIFICATION_EVENTS = {
+    "CREATED": "EVENT_SLOT_CREATED",
+    "UPDATED": "EVENT_SLOT_UPDATED",
+    "CONFIRMED": "EVENT_SLOT_CONFIRMED",
+    "CANCELLED": "EVENT_SLOT_CANCELLED",
+    "RESCHEDULED": "EVENT_SLOT_RESCHEDULED",
+}
 
 
 class OutlookEventSlot(WebsiteGenerator):
@@ -75,6 +82,10 @@ class OutlookEventSlot(WebsiteGenerator):
     def before_insert(self):
         self.validate_slots()
 
+    def on_update(self):
+        if not self.flags.skip_update_event_notify and not self.is_new():
+            self.notify_slot_change(SLOT_UPDATE_NOTIFICATION_EVENTS["UPDATED"])
+
     def after_insert(self):
         self.db_set(
             {"route": f"slots/{self.name}", "published": 1},
@@ -82,6 +93,7 @@ class OutlookEventSlot(WebsiteGenerator):
             notify=True,
             commit=True,
         )
+        self.notify_slot_change(SLOT_UPDATE_NOTIFICATION_EVENTS["CREATED"])
 
     def confirm_event(self, slot_id, is_online, ignore_permissions=False):
         if self.selected_slot_start:
@@ -105,6 +117,7 @@ class OutlookEventSlot(WebsiteGenerator):
         event_doc = self._prepare_event_doc(starts_on, ends_on, is_online)
         event_doc.save(ignore_permissions=ignore_permissions)
 
+        self.flags.skip_update_event_notify = True
         self.update(
             {
                 "status": "Confirmed",
@@ -115,6 +128,7 @@ class OutlookEventSlot(WebsiteGenerator):
             }
         )
         self.save(ignore_permissions=True)
+        self.notify_slot_change(SLOT_UPDATE_NOTIFICATION_EVENTS["CONFIRMED"])
 
     def reschedule_event(self, new_slots, reschedule_reason):
         now_datetime = utils.now_datetime()
@@ -131,6 +145,7 @@ class OutlookEventSlot(WebsiteGenerator):
                 {"starts_on": slot["starts_on"], "ends_on": slot["ends_on"]},
             )
 
+        self.flags.skip_update_event_notify = True
         self.append(
             "slot_reschedule_history",
             {
@@ -140,6 +155,7 @@ class OutlookEventSlot(WebsiteGenerator):
             },
         )
         self.save()
+        self.notify_slot_change(SLOT_UPDATE_NOTIFICATION_EVENTS["RESCHEDULED"])
 
     def cancel_event(self, cancel_reason):
         now_datetime = utils.now_datetime()
@@ -149,6 +165,7 @@ class OutlookEventSlot(WebsiteGenerator):
         if self.docstatus.is_cancelled():
             frappe.throw("Outlook Event Slot doc is cancelled, can not continue.")
 
+        self.flags.skip_update_event_notify = True
         self.append(
             "slot_reschedule_history",
             {
@@ -159,6 +176,37 @@ class OutlookEventSlot(WebsiteGenerator):
         )
         self.submit()
         self.cancel()
+        self.notify_slot_change(SLOT_UPDATE_NOTIFICATION_EVENTS["CANCELLED"])
+
+    def notify_slot_change(self, event, message=None):
+        if not message:
+            message = self.name
+        elif not isinstance(message, str):
+            message = frappe.as_json(message)
+
+        docs_updated = set()
+        users_updated = set()
+
+        for event_participant in self.event_participants:
+            doc_key = (
+                event_participant.reference_doctype,
+                event_participant.reference_docname,
+            )
+            user = event_participant.email
+
+            if doc_key not in docs_updated:
+                frappe.publish_realtime(
+                    event,
+                    message,
+                    doctype=event_participant.reference_doctype,
+                    docname=event_participant.reference_docname,
+                    after_commit=True,
+                )
+                docs_updated.add(doc_key)
+
+            if user not in users_updated:
+                frappe.publish_realtime(event, message, user=user, after_commit=True)
+                users_updated.add(user)
 
     def _prepare_event_doc(self, starts_on, ends_on, is_online):
         existing_event_name = frappe.db.exists(

@@ -3,6 +3,13 @@ frappe.provide("microsoft.utils.outlook_scheduling");
 
 const DEFAULT_PROPOSAL_COLOR = "orange";
 const DEFAULT_HOLIDAY_COLOR = "red";
+const SLOT_UPDATE_NOTIFICATION_EVENTS = {
+  CREATED: "EVENT_SLOT_CREATED",
+  UPDATED: "EVENT_SLOT_UPDATED",
+  CONFIRMED: "EVENT_SLOT_CONFIRMED",
+  CANCELLED: "EVENT_SLOT_CANCELLED",
+  RESCHEDULED: "EVENT_SLOT_RESCHEDULED",
+};
 
 $.extend(microsoft.utils.outlook_scheduling, {
   schedule_new_event(frm, scheduled_events_wrapper, default_data = {}) {
@@ -24,6 +31,7 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
 
     this.form_wrapper = $(this.frm.wrapper);
     this.setup();
+    this.activeEventListeners = new Set();
   }
 
   async setup() {
@@ -93,6 +101,26 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
     this.scheduled_events_wrapper
       .off("click")
       .on("click", this.wrapper_click_handler());
+
+    for (let event of Object.values(SLOT_UPDATE_NOTIFICATION_EVENTS)) {
+      if (!this.activeEventListeners.has(event)) {
+        this.listenToEvent(event);
+        this.activeEventListeners.add(event);
+      }
+    }
+  }
+
+  listenToEvent(event) {
+    frappe.realtime.on(event, (data) => {
+      this.handleEventUpdate(event, data);
+    });
+  }
+
+  handleEventUpdate(event, data) {
+    console.log(`Event ${event} updated: `, data);
+    if (event === SLOT_UPDATE_NOTIFICATION_EVENTS["CONFIRMED"]) {
+      this.refresh();
+    }
   }
 
   wrapper_click_handler() {
