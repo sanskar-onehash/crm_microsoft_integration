@@ -32,6 +32,8 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
     this.form_wrapper = $(this.frm.wrapper);
     this.setup();
     this.activeEventListeners = new Set();
+    this.lastEvent = null;
+    this.eventQueue = [];
   }
 
   async setup() {
@@ -61,7 +63,7 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
     }
   }
 
-  refresh() {
+  async refresh() {
     var me = this;
     $(this.scheduled_events_wrapper).empty();
     // let cur_form_footer = this.form_wrapper.find(".form-footer");
@@ -74,7 +76,7 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
     //   $(this.all_activities_wrapper).removeClass("frappe-control");
     // }
 
-    frappe.call({
+    return await frappe.call({
       method: "crm_microsoft_integration.microsoft.utils.get_reference_events",
       args: {
         ref_doctype: this.frm.doc.doctype,
@@ -116,10 +118,27 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
     });
   }
 
-  handleEventUpdate(event, data) {
-    console.log(`Event ${event} updated: `, data);
+  async handleEventUpdate(event, data) {
+    if (event === this.lastEvent) {
+      return;
+    }
+
+    if (this.lastEvent) {
+      this.eventQueue.push({ event, data });
+      return;
+    }
+
+    this.lastEvent = event;
+
     if (event === SLOT_UPDATE_NOTIFICATION_EVENTS["CONFIRMED"]) {
-      this.refresh();
+      await this.refresh();
+    }
+
+    this.lastEvent = null;
+
+    if (this.eventQueue.length > 0) {
+      const { event, data } = this.eventQueue.shift();
+      await this.handleEventUpdate(event, data);
     }
   }
 
