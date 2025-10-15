@@ -16,7 +16,9 @@
   "client_secret_id",
   "client_secret_value",
   "redirect_uri",
-  "provide_consent"
+  "provide_consent",
+  "calendar_tab",
+  "booking_notice_hours"
  ],
  "fields": [
   {
@@ -93,12 +95,24 @@
    "fieldtype": "Datetime",
    "hidden": 1,
    "label": "Access Token Expiry"
+  },
+  {
+   "fieldname": "calendar_tab",
+   "fieldtype": "Tab Break",
+   "label": "Calendar"
+  },
+  {
+   "description": "Number of hours before the event when booking closes. ex: 1, 0.5, etc...",
+   "fieldname": "booking_notice_hours",
+   "fieldtype": "Float",
+   "label": "Booking Notice (Hours)",
+   "non_negative": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-08-12 21:52:29.573247",
+ "modified": "2025-10-15 10:00:05.132074",
  "modified_by": "Administrator",
  "module": "Microsoft",
  "name": "Microsoft Settings",
