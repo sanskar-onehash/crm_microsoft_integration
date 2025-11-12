@@ -11,6 +11,15 @@
     endblock %}
 
     <title>{% block title %}{{ title | striptags }}{% endblock %}</title>
+
+    {% block favicon %}
+    <link
+      rel="shortcut icon"
+      href="{{ (favicon or '/assets/frappe/images/frappe-favicon.svg') | abs_url }}"
+      type="image/x-icon"
+    />
+    {% endblock %}
+
     <link
       rel="stylesheet"
       href="/assets/frappe/css/fonts/fontawesome/font-awesome.min.css"
