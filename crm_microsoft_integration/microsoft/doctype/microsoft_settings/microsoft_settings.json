@@ -18,6 +18,7 @@
   "redirect_uri",
   "provide_consent",
   "calendar_tab",
+  "column_break_hbab",
   "booking_notice_hours"
  ],
  "fields": [
@@ -102,17 +103,22 @@
    "label": "Calendar"
   },
   {
+   "depends_on": "enabled",
    "description": "Number of hours before the event when booking closes. ex: 1, 0.5, etc...",
    "fieldname": "booking_notice_hours",
    "fieldtype": "Float",
    "label": "Booking Notice (Hours)",
    "non_negative": 1
+  },
+  {
+   "fieldname": "column_break_hbab",
+   "fieldtype": "Column Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-10-15 10:00:05.132074",
+ "modified": "2025-11-13 14:35:39.589071",
  "modified_by": "Administrator",
  "module": "Microsoft",
  "name": "Microsoft Settings",
