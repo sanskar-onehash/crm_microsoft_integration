@@ -19,7 +19,10 @@
   "provide_consent",
   "calendar_tab",
   "column_break_hbab",
-  "booking_notice_hours"
+  "booking_notice_hours",
+  "section_break_gorl",
+  "booking_page_css",
+  "booking_page_script"
  ],
  "fields": [
   {
@@ -113,12 +116,28 @@
   {
    "fieldname": "column_break_hbab",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_gorl",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "booking_page_css",
+   "fieldtype": "Code",
+   "label": "Booking Page CSS",
+   "options": "CSS"
+  },
+  {
+   "fieldname": "booking_page_script",
+   "fieldtype": "Code",
+   "label": "Booking Page Script",
+   "options": "JS"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-11-13 14:35:39.589071",
+ "modified": "2025-12-18 11:02:58.607902",
  "modified_by": "Administrator",
  "module": "Microsoft",
  "name": "Microsoft Settings",

@@ -44,11 +44,16 @@ class OutlookEventSlot(WebsiteGenerator):
             now_datetime, hours=booking_offset_hours
         )
 
+        mi_settings = frappe.get_single("Microsoft Settings")
+
         context.update(
             {
+                "no_cache": 1,
                 "week_days": [
                     week_field for week_field in WEEK_FIELDS if self.get(week_field)
                 ],
+                "custom_style": mi_settings.booking_page_css,
+                "custom_script": mi_settings.booking_page_script,
             }
         )
 

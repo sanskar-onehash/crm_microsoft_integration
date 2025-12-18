@@ -28,6 +28,12 @@
     <style>
       {% include "templates/includes/event_slot.css" %}
     </style>
+    {% if custom_style %}
+    <style>
+      {{ custom_style }}
+    </style>
+    {% endif %}
+
 
     {% if boot.lang == "eo" %}
     <script type="text/javascript">
@@ -372,6 +378,15 @@
       });
                     });
     </script>
+    {% if custom_script %}
+    <script>
+      {
+        {
+          custom_script;
+        }
+      }
+    </script>
+    {% endif %}
     <!-- csrf_token -->
     {%- block body_include %}{{ body_include or "" }}{% endblock -%}
   </body>
