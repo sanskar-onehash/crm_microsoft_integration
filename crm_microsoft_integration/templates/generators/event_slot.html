@@ -379,13 +379,9 @@
                     });
     </script>
     {% if custom_script %}
-    <script>
-      {
-        {
-          custom_script;
-        }
-      }
-    </script>
+      <script>
+        {{custom_script}}
+      </script>
     {% endif %}
     <!-- csrf_token -->
     {%- block body_include %}{{ body_include or "" }}{% endblock -%}
