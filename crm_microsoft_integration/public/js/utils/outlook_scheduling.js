@@ -969,11 +969,12 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
 
     const isoStr = cleanedInput.replace(" ", "T");
 
-    const date = new Date(isoStr);
+    const dateObj = new Date(isoStr);
 
     // Convert to IST (+5:30)
     const options = {
       timeZone: "Asia/Kolkata",
+      weekday: "long",
       day: "numeric",
       month: "long",
       year: "numeric",
@@ -983,6 +984,7 @@ microsoft.utils.OutlookScheduling = class OutlookScheduling {
     };
 
     const formatter = new Intl.DateTimeFormat("en-IN", options);
-    return formatter.format(date);
+    const [weekday, date, month, year, time_separator, time, time_meridiem] = formatter.format(dateObj).replaceAll(",", "").split(' ');
+		return `${weekday}, ${date} ${month} ${year} ${time_separator} ${time} ${time_meridiem}`;
   }
 };

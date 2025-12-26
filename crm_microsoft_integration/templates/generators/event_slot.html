@@ -32,10 +32,7 @@
     <style>
       {{ custom_style }}
     </style>
-    {% endif %}
-
-
-    {% if boot.lang == "eo" %}
+    {% endif %} {% if boot.lang == "eo" %}
     <script type="text/javascript">
       var _jipt = [];
       _jipt.push(["project", "frappe"]);
@@ -176,7 +173,9 @@
               <span
                 ><strong style="margin-right: 10px">From:</strong>
                 <span id="selectedSlotStart"
-                  >{{ selected_slot_start }}</span
+                  >{{
+                  frappe.utils.get_datetime(selected_slot_start).strftime('%A,
+                  %d %B %Y, %-I:%M %p') }}</span
                 ></span
               >
             </div>
@@ -184,7 +183,10 @@
               <i class="fa fa-clock-o"></i>
               <span
                 ><strong style="margin-right: 10px">To:</strong>
-                <span id="selectedSlotEnd">{{ selected_slot_end }}</span></span
+                <span id="selectedSlotEnd"
+                  >{{ frappe.utils.get_datetime(selected_slot_end).strftime('%A,
+                  %d %B %Y, %-I:%M %p') }}</span
+                ></span
               >
             </div>
 
@@ -256,127 +258,128 @@
     {{ include_script('frappe-web.bundle.js') }} {% endblock %}
 
     <script>
-                    document.addEventListener("DOMContentLoaded", () => {
-                      const slotButtons = document.querySelectorAll(".slot-btn");
-                      const confirmBtn = document.getElementById("confirmBooking");
-                      const bookingCard = document.getElementById("bookingCard");
-                      const confirmationCard = document.getElementById("confirmationCard");
-                      const confirmedText = document.getElementById("confirmedText");
-                      const repeatInfoEl = document.getElementById("repeatInfo");
-                      const selectedSlotStart = document.getElementById("selectedSlotStart");
-                      const selectedSlotEnd = document.getElementById("selectedSlotEnd");
+      function formatDate(date) {
+      	date = new Date(date);
 
-                      let selectedSlot = null;
-                  let attendanceType = "{{ "" if event_location and add_teams_meet else "in-person" if event_location else "online"}}";
-            		const params = {}
-            		window.location.search.slice(1).split("&").forEach(param => {
-            			const [key, value] = param.split("=");
-            			params[key] = value
-            		})
+      	// Convert to IST (+5:30)
+      	const options = {
+      		timeZone: "Asia/Kolkata",
+      		day: "numeric",
+      		month: "long",
+      		year: "numeric",
+      	};
 
-                  function enableSubmit() {
-                  	confirmBtn.disabled = true;
-                  	if (attendanceType && selectedSlot) {
-                  		confirmBtn.disabled = false;
-                  		confirmBtn.textContent = "Confirm Booking";
-                  	} else if (attendanceType) {
-                  		confirmBtn.textContent = "Select a slot to continue";
-                  	} else {
-                  		confirmBtn.textContent = "Select a meeting mode to continue";
-                  	}
-                  }
+      	const formatter = new Intl.DateTimeFormat("en-IN", options);
+      	return formatter.format(date);
+      }
 
-                      // Format slots
-                      slotButtons.forEach((btn) => {
-                        const start = new Date(btn.dataset.start);
-                        const end = new Date(btn.dataset.end);
-                        btn.querySelector(".slot-date").textContent =
-                          start.toLocaleDateString("en-US", {
-                            weekday: "long",
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          });
-                        btn.querySelector(".slot-time").textContent =
-                          `${start.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} - ${end.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
+      function formatTime(date) {
+      	date = new Date(date);
 
-                        btn.addEventListener("click", () => {
-                          slotButtons.forEach((b) => b.classList.remove("selected"));
-                          btn.classList.add("selected");
-                          selectedSlot = { start, end, id: btn.dataset.id };
-                  		enableSubmit();
-                        });
-            			if (params.slot && params.slot === btn.dataset.id) {
-            				btn.click();
-            			}
-                      });
+      	return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+      }
 
-                      // Attendance type
-                      document
-                        .querySelectorAll("input[name='attendance']")
-                        .forEach((radio) => {
-                          radio.addEventListener("change", (e) => {
+      document.addEventListener("DOMContentLoaded", () => {
+      	const slotButtons = document.querySelectorAll(".slot-btn");
+      	const confirmBtn = document.getElementById("confirmBooking");
+      	const bookingCard = document.getElementById("bookingCard");
+      	const confirmationCard = document.getElementById("confirmationCard");
+      	const confirmedText = document.getElementById("confirmedText");
+      	const repeatInfoEl = document.getElementById("repeatInfo");
+      	const selectedSlotStart = document.getElementById("selectedSlotStart");
+      	const selectedSlotEnd = document.getElementById("selectedSlotEnd");
 
-                            attendanceType = e.target.value;
-                  			enableSubmit();
-                          });
-                        });
+      	let selectedSlot = null;
+      	let attendanceType = "{{ "" if event_location and add_teams_meet else "in-person" if event_location else "online"}}";
+      	const params = {};
+      	window.location.search
+      		.slice(1)
+      		.split("&")
+      		.forEach((param) => {
+      			const [key, value] = param.split("=");
+      			params[key] = value;
+      		});
 
-                      // Repeat info
-                      if (repeatInfoEl) {
-                        const weekDays = {{ week_days or [] }};
-                        const repeatOn = "{{ repeat_on }}";
-                        const repeatTill = "{{ repeat_till or "" }}";
+      	function enableSubmit() {
+      		confirmBtn.disabled = true;
+      		if (attendanceType && selectedSlot) {
+      			confirmBtn.disabled = false;
+      			confirmBtn.textContent = "Confirm Booking";
+      		} else if (attendanceType) {
+      			confirmBtn.textContent = "Select a slot to continue";
+      		} else {
+      			confirmBtn.textContent = "Select a meeting mode to continue";
+      		}
+      	}
 
-                  	repeatInfoEl.innerHTML = `<p>Repeats ${repeatOn} ${repeatOn === "Weekly" ? "on <span class='capitalize'>" + weekDays.join(", ") + "</span>": ""} ${repeatTill ? ` until ${new Date(repeatTill).toLocaleDateString()}` : ""}</p>`;
-                      }
+      	// Format slots
+      	slotButtons.forEach((btn) => {
+      		const start = new Date(btn.dataset.start);
+      		const end = new Date(btn.dataset.end);
+      		btn.querySelector(".slot-date").textContent = formatDate(start);
+      		btn.querySelector(".slot-time").textContent =
+      			`${formatTime(start)} - ${formatTime(end)}`;
 
-                      // Confirm booking
-                      confirmBtn && confirmBtn.addEventListener("click", () => {
-        if (!selectedSlot) return;
-        confirmBtn.disabled = true;
+      		btn.addEventListener("click", () => {
+      			slotButtons.forEach((b) => b.classList.remove("selected"));
+      			btn.classList.add("selected");
+      			selectedSlot = { start, end, id: btn.dataset.id };
+      			enableSubmit();
+      		});
+      		if (params.slot && params.slot === btn.dataset.id) {
+      			btn.click();
+      		}
+      	});
 
-        const loaderOverlay = document.getElementById("loaderOverlay");
-        loaderOverlay.classList.add("active");
+      	// Attendance type
+      	document.querySelectorAll("input[name='attendance']").forEach((radio) => {
+      		radio.addEventListener("change", (e) => {
+      			attendanceType = e.target.value;
+      			enableSubmit();
+      		});
+      	});
 
-        frappe.call({
-          method:
-            "crm_microsoft_integration.microsoft.doctype.outlook_event_slot.outlook_event_slot.confirm_slot",
-          args: {
-            slot_id: selectedSlot.id,
-            mode_online: attendanceType === "online",
-          },
-          callback: (res) => {
-            loaderOverlay.classList.remove("active");
+      	// Repeat info
+      	if (repeatInfoEl) {
+      		const weekDays = {{ week_days or [] }};
+      		const repeatOn = "{{ repeat_on }}";
+      		const repeatTill = "{{ repeat_till or "" }}";
 
-            if (!res.exc) {
-              bookingCard.classList.add("hidden");
-              confirmationCard.classList.remove("hidden");
+      		repeatInfoEl.innerHTML = `<p>Repeats ${repeatOn} ${repeatOn === "Weekly" ? "on <span class='capitalize'>" + weekDays.join(", ") + "</span>" : ""} ${repeatTill ? ` until ${formatDate(repeatTill)}` : ""}</p>`;
+      	}
 
-              selectedSlotStart.textContent =
-                selectedSlot.start.toLocaleDateString("en-US", {
-                  weekday: "long",
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                  hour: "numeric",
-                  minute: "2-digit",
-                });
-              selectedSlotEnd.textContent = selectedSlot.end.toLocaleDateString("en-US", {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-                hour: "numeric",
-                minute: "2-digit",
-              });
-            } else {
-              confirmBtn.disabled = false;
-            }
-          },
-        });
+      	// Confirm booking
+      	confirmBtn &&
+      		confirmBtn.addEventListener("click", () => {
+      			if (!selectedSlot) return;
+      			confirmBtn.disabled = true;
+
+      			const loaderOverlay = document.getElementById("loaderOverlay");
+      			loaderOverlay.classList.add("active");
+
+      			frappe.call({
+      				method:
+      					"crm_microsoft_integration.microsoft.doctype.outlook_event_slot.outlook_event_slot.confirm_slot",
+      				args: {
+      					slot_id: selectedSlot.id,
+      					mode_online: attendanceType === "online",
+      				},
+      				callback: (res) => {
+      					loaderOverlay.classList.remove("active");
+
+      					if (!res.exc) {
+      						bookingCard.classList.add("hidden");
+      						confirmationCard.classList.remove("hidden");
+
+      						selectedSlotStart.textContent = formatDate(selectedSlot.start);
+      						selectedSlotEnd.textContent = formatDate(selectedSlot.end);
+      					} else {
+      						confirmBtn.disabled = false;
+      					}
+      				},
+      			});
+      		});
       });
-                    });
     </script>
     {% if custom_script %}
       <script>
