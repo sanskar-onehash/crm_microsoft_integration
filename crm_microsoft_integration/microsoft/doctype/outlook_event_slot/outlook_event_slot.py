@@ -235,6 +235,7 @@ class OutlookEventSlot(WebsiteGenerator):
                 "custom_outlook_calendar": self.outlook_calendar,
                 "custom_outlook_organiser": self.organiser,
                 "custom_outlook_from_slot": self.name,
+                "custom_ms_allow_new_time_proposals": self.allow_new_time_proposals,
             }
         )
 

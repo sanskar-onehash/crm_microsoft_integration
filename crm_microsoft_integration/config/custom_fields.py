@@ -20,6 +20,15 @@ EVENT_CUSTOM_FIELDS = [
     {
         "doctype": "Custom Field",
         "dt": "Event",
+        "label": "Allow New Time Proposals",
+        "insert_after": "custom_add_teams_meet",
+        "fieldtype": "Check",
+        "fieldname": "custom_ms_allow_new_time_proposals",
+        "depends_on": "eval:doc.custom_sync_with_ms_calendar || doc.custom_is_outlook_event",
+    },
+    {
+        "doctype": "Custom Field",
+        "dt": "Event",
         "label": "Outlook Calendar",
         "insert_after": "pulled_from_google_calendar",
         "fieldtype": "Section Break",

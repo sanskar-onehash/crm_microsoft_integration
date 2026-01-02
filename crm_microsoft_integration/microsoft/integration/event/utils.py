@@ -53,6 +53,7 @@ def outlook_event_from_event_doc(event_doc, organizer_doc=None, calendar_doc=Non
     return {
         "subject": event_doc.subject,
         "attendees": attendees,
+        "allowNewTimeProposals": event_doc.custom_ms_allow_new_time_proposals,
         "body": {
             "contentType": "HTML",
             "content": event_doc.description,

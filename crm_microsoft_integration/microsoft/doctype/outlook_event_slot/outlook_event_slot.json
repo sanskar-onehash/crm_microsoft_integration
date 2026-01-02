@@ -22,6 +22,7 @@
   "add_teams_meet",
   "all_day",
   "repeat_this_event",
+  "allow_new_time_proposals",
   "published",
   "route",
   "section_break_xghr",
@@ -296,6 +297,12 @@
    "label": "Reschedule History",
    "options": "Outlook Reschedule History",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_new_time_proposals",
+   "fieldtype": "Check",
+   "label": "Allow New Time Proposals"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -306,7 +313,7 @@
    "link_fieldname": "custom_outlook_from_slot"
   }
  ],
- "modified": "2025-08-22 15:54:58.015956",
+ "modified": "2026-01-02 09:14:33.307979",
  "modified_by": "Administrator",
  "module": "Microsoft",
  "name": "Outlook Event Slot",
