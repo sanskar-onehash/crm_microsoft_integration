@@ -70,6 +70,7 @@ class OutlookEventSlot(WebsiteGenerator):
 
     def validate(self):
         self.validate_repeat()
+        self.validate_slots(validate_past=self.is_new())
         return super().validate()
 
     def validate_repeat(self):
@@ -85,11 +86,26 @@ class OutlookEventSlot(WebsiteGenerator):
             if not chosen_week_day:
                 frappe.throw("Choose one or more week day/s to repeat on")
 
-    def validate_slots(self):
-        pass
+    def validate_slots(self, validate_past=False):
+        now = utils.get_datetime()
 
-    def before_insert(self):
-        self.validate_slots()
+        for slot_proposal in self.slot_proposals:
+            starts_on = utils.get_datetime(slot_proposal.starts_on)
+            ends_on = utils.get_datetime(slot_proposal.ends_on)
+
+            if not starts_on:
+                frappe.throw("<strong>Starts on can not be empty.</strong>")
+
+            if not ends_on and not self.all_day:
+                frappe.throw("<strong>Ends on can not be empty.</strong>")
+
+            if ends_on < starts_on:
+                frappe.throw(
+                    "<strong>Ends on cannot be earlier than the Starts on.</strong>"
+                )
+
+            if validate_past and starts_on < now:
+                frappe.throw("<strong>Starts on must be in the future.</strong>")
 
     def on_update(self):
         if not self.flags.skip_update_event_notify and not self.is_new():
