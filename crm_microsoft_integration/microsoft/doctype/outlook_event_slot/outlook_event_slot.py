@@ -46,6 +46,7 @@ class OutlookEventSlot(WebsiteGenerator):
                 ],
                 "custom_style": mi_settings.booking_page_css,
                 "custom_script": mi_settings.booking_page_script,
+                "original_subject": self.get_original_subject(),
             }
         )
 
@@ -244,7 +245,9 @@ class OutlookEventSlot(WebsiteGenerator):
                 frappe.publish_realtime(event, message, user=user, after_commit=True)
                 users_updated.add(user)
 
-    def get_original_subject(self, subject):
+    def get_original_subject(self, subject=None):
+        subject = subject or self.subject
+
         for mode_tag in MEETING_MODE_TAGS:
             if subject.endswith(MEETING_MODE_TAGS[mode_tag]):
                 subject = subject[: -len(MEETING_MODE_TAGS[mode_tag])]
@@ -252,8 +255,9 @@ class OutlookEventSlot(WebsiteGenerator):
 
         return subject
 
-    def prepare_subject(self, subject, is_online=False):
+    def prepare_subject(self, subject=None, is_online=False):
         # Subject updates to - Online or - In Person
+        subject = subject or self.subject
 
         subject = self.get_original_subject(subject)
         if is_online:
