@@ -35,15 +35,7 @@ class OutlookEventSlot(WebsiteGenerator):
     )
 
     def get_context(self, context):
-        now_datetime = utils.now_datetime()
-        booking_offset_hours = (
-            frappe.db.get_single_value("Microsoft Settings", "booking_notice_hours")
-            or 0
-        )
-        booking_offset_time = utils.add_to_date(
-            now_datetime, hours=booking_offset_hours
-        )
-
+        booking_offset_time = self.get_offset_time()
         mi_settings = frappe.get_single("Microsoft Settings")
 
         context.update(
@@ -63,14 +55,14 @@ class OutlookEventSlot(WebsiteGenerator):
                     "slots": [
                         {"start": slot.starts_on, "end": slot.ends_on, "id": slot.name}
                         for slot in self.slot_proposals
-                        if booking_offset_time < slot.starts_on
+                        if slot.starts_on > booking_offset_time
                     ],
                 }
             )
 
     def validate(self):
         self.validate_repeat()
-        self.validate_slots(validate_past=self.is_new())
+        self.validate_slots(validate_offset=self.is_new())
         return super().validate()
 
     def validate_repeat(self):
@@ -86,8 +78,8 @@ class OutlookEventSlot(WebsiteGenerator):
             if not chosen_week_day:
                 frappe.throw("Choose one or more week day/s to repeat on")
 
-    def validate_slots(self, validate_past=False):
-        now = utils.get_datetime()
+    def validate_slots(self, validate_offset=False):
+        offset_time = self.get_offset_time()
 
         for slot_proposal in self.slot_proposals:
             starts_on = utils.get_datetime(slot_proposal.starts_on)
@@ -104,8 +96,17 @@ class OutlookEventSlot(WebsiteGenerator):
                     "<strong>Ends on cannot be earlier than the Starts on.</strong>"
                 )
 
-            if validate_past and starts_on < now:
-                frappe.throw("<strong>Starts on must be in the future.</strong>")
+            if validate_offset and starts_on < offset_time:
+                frappe.throw(
+                    """<div>
+                        <p><strong>Starts on must be at least {offset_hours} hours or later.
+                            Please schedule the slot after the required offset time.</strong></p>
+                        <p><a href='{settings_url}' target="_blank">Or update the offset time in Microsoft Settings</a></p>
+                    </div>""".format(
+                        settings_url=utils.get_url_to_list("Microsoft Settings"),
+                        offset_hours=self.get_offset_hours(),
+                    )
+                )
 
     def on_update(self):
         if not self.flags.skip_update_event_notify and not self.is_new():
@@ -119,6 +120,16 @@ class OutlookEventSlot(WebsiteGenerator):
             commit=True,
         )
         self.notify_slot_change(SLOT_UPDATE_NOTIFICATION_EVENTS["CREATED"])
+
+    def get_offset_hours(self):
+        return (
+            frappe.db.get_single_value("Microsoft Settings", "booking_notice_hours")
+            or 0.0
+        )
+
+    def get_offset_time(self):
+        now_datetime = utils.now_datetime()
+        return utils.add_to_date(now_datetime, hours=self.get_offset_hours())
 
     def confirm_event(self, slot_id, is_online, ignore_permissions=False):
         if self.selected_slot_start:
