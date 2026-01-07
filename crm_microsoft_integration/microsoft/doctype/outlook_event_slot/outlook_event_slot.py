@@ -244,6 +244,23 @@ class OutlookEventSlot(WebsiteGenerator):
                 frappe.publish_realtime(event, message, user=user, after_commit=True)
                 users_updated.add(user)
 
+    def get_original_subject(self, subject):
+        for mode_tag in MEETING_MODE_TAGS:
+            if subject.endswith(MEETING_MODE_TAGS[mode_tag]):
+                subject = subject[: -len(MEETING_MODE_TAGS[mode_tag])]
+                break
+
+        return subject
+
+    def prepare_subject(self, subject, is_online=False):
+        # Subject updates to - Online or - In Person
+
+        subject = self.get_original_subject(subject)
+        if is_online:
+            return subject + MEETING_MODE_TAGS["ONLINE"]
+        else:
+            return subject + MEETING_MODE_TAGS["IN_PERSON"]
+
     def _prepare_event_doc(self, starts_on, ends_on, is_online):
         existing_event_name = frappe.db.exists(
             "Event", {"custom_outlook_from_slot": self.name}
@@ -266,16 +283,9 @@ class OutlookEventSlot(WebsiteGenerator):
             }
         )
 
-        # Subject updates to - Online or - In Person
-        subject = event_doc.subject or self.subject
-        for mode_tag in MEETING_MODE_TAGS:
-            if subject.endswith(MEETING_MODE_TAGS[mode_tag]):
-                subject = subject[: -len(MEETING_MODE_TAGS[mode_tag])]
-                break
-        if is_online:
-            subject = subject + MEETING_MODE_TAGS["ONLINE"]
-        else:
-            subject = subject + MEETING_MODE_TAGS["IN_PERSON"]
+        subject = self.prepare_subject(
+            event_doc.subject or self.subject, is_online=is_online
+        )
 
         # Propagating reschedule history
         event_doc_reschedules = len(event_doc.custom_outlook_reschedule_history or [])
